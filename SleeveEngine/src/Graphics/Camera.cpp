@@ -1,0 +1,42 @@
+#include "Graphics/Camera.h"
+#include "Graphics/GraphicsFwd.h"
+#include "Graphics/Renderer.h"
+#include "Core/EngineCommon.h"
+
+PerspectiveCamera::PerspectiveCamera()
+{
+}
+
+PerspectiveCamera::~PerspectiveCamera()
+{
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+		delete m_cameraUniformBuffers[i];
+	}
+}
+
+void PerspectiveCamera::BeginPlay()
+{
+	m_cameraUniformBuffers.reserve( MAX_FRAMES_IN_FLIGHT );
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+		m_cameraUniformBuffers.push_back( g_theRenderer->CreateUniformBuffer( sizeof( CameraUniformBufferObject ) ) );
+	}
+}
+
+Mat44 PerspectiveCamera::GetViewMatrix() const
+{
+	Mat44 rotationMatrix = m_orientation.GetMatrix();
+	Vec4 tempVector = rotationMatrix.m_cols[0];
+	rotationMatrix.m_cols[0] = -rotationMatrix.m_cols[1];
+	rotationMatrix.m_cols[1] = rotationMatrix.m_cols[2];
+	rotationMatrix.m_cols[2] = -tempVector;
+	rotationMatrix.Transpose();
+	Mat44 translationMatrix = Mat44();
+	translationMatrix.m_cols[3] = Vec4( -m_position.x, -m_position.y, -m_position.z, 1.f );
+	rotationMatrix.Append( translationMatrix );
+	return rotationMatrix;
+}
+
+Mat44 PerspectiveCamera::GetPerspectiveProjectionMatrix() const
+{
+	return ::GetPerspectiveMatrix( m_fov, m_aspect, m_zNear, m_zFar );
+}
