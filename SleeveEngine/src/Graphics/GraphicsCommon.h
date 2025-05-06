@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "Math/MathFwd.h"
+
 class VertexBuffer;
 class IndexBuffer;
 class UniformBuffer;
@@ -37,6 +38,11 @@ constexpr UniformBufferDataBindingFlags UNIFORM_BUFFER_USE_MODEL_CONSTANTS_BINDI
 struct UniformBufferBinding {
 	uint32_t m_flags = 0;
 	uint64_t m_modelUniformBufferOffset = 0;
+};
+
+struct BufferMemoryBlock {
+	uint64_t m_startPos;
+	uint64_t m_size;
 };
 
 constexpr uint32_t WINDOW_WIDTH = 1600;

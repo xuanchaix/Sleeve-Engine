@@ -1,6 +1,7 @@
 #include "Entity/Entity.h"
 #include "Graphics/Renderer.h"
 #include <vector>
+#include <chrono>
 
 extern PerspectiveCamera globalCamera;
 
@@ -23,17 +24,19 @@ Entity3D::Entity3D( Vec3 const& position /*= Vec3()*/, Euler const& orientation 
 
 Entity3D::~Entity3D()
 {
+	g_theRenderer->ReturnMemoryToSharedBuffer( m_vertexBufferBinding, m_indexBufferBinding, m_uniformBufferBinding );
 }
 
 void Entity3D::BeginPlay()
 {
 	// initialize rendering objects
-	m_vertexBufferBinding = g_theRenderer->AddVertsDataToSharedVertexBuffer( (void*)vertices.data(), sizeof(vertices[0]) * vertices.size(), (uint32_t)vertices.size());
+	m_vertexBufferBinding = g_theRenderer->AddVertsDataToSharedVertexBuffer( (void*)vertices.data(), sizeof( vertices[0] ) * vertices.size(), (uint32_t)vertices.size() );
 	m_indexBufferBinding = g_theRenderer->AddIndicesDataToSharedIndexBuffer( (void*)indices.data(), sizeof( indices[0] ) * indices.size(), (uint32_t)indices.size() );
-	m_shader = g_theResourceManager->GetOrLoadShader( "shader" );
 
 	// initialize uniform buffers
 	m_uniformBufferBinding = g_theRenderer->AddDataToSharedUniformBuffer( UNIFORM_BUFFER_USE_MODEL_CONSTANTS_BINDING_2 );
+
+	m_shader = g_theResourceManager->GetOrLoadShader( "shader" );
 }
 
 void Entity3D::Update( float deltaSeconds )

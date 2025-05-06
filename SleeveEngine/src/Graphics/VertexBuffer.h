@@ -1,5 +1,7 @@
 #pragma once
 #include <vulkan/vulkan.h>
+#include <vector>
+#include "GraphicsCommon.h"
 
 class VertexBuffer {
 public:
@@ -8,13 +10,17 @@ public:
 		vkDestroyBuffer( m_device, m_buffer, nullptr );
 		vkFreeMemory( m_device, m_deviceMemory, nullptr );
 	};
+
 protected:
 	friend class Renderer;
-	VertexBuffer( VkDevice device, uint32_t vertexCount ) :m_device( device ), m_vertexCount( vertexCount ) {};
-	uint32_t m_vertexCount = 0;
+	VertexBuffer( VkDevice device, uint64_t size );
+	bool FindProperPositionForSizeInBuffer( uint64_t& out_pos, uint64_t size );
+	void EnlargeBuffer( uint64_t newSize );
+	void ReturnMemory( uint64_t offset, uint64_t size );
 	uint32_t m_stride = 0;
 	uint64_t m_maxSize = 0;
 	VkDevice m_device = nullptr;
 	VkBuffer m_buffer = nullptr;
 	VkDeviceMemory m_deviceMemory = nullptr;
+	std::vector<BufferMemoryBlock> m_memoryBlocks;
 };

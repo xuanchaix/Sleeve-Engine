@@ -784,8 +784,7 @@ IndexBuffer* Renderer::CreateIndexBuffer( void* indexData, uint64_t size, uint32
 	memcpy( data, indexData, (size_t)bufferSize );
 	vkUnmapMemory( m_device, stagingBufferMemory );
 
-	IndexBuffer* indexBuffer = new IndexBuffer( m_device, indexCount );
-	indexBuffer->m_maxSize = size;
+	IndexBuffer* indexBuffer = new IndexBuffer( m_device, indexCount, size );
 	CreateBuffer( bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer->m_buffer, indexBuffer->m_deviceMemory );
 
 	CopyBuffer( stagingBuffer, indexBuffer->m_buffer, bufferSize );
@@ -809,9 +808,8 @@ VertexBuffer* Renderer::CreateVertexBuffer( void* vertexData, uint64_t size, uin
 	memcpy( data, vertexData, (size_t)bufferSize );
 	vkUnmapMemory( m_device, stagingBufferMemory );
 
-	VertexBuffer* vertexBuffer = new VertexBuffer( m_device, vertexCount );
+	VertexBuffer* vertexBuffer = new VertexBuffer( m_device, size );
 	vertexBuffer->m_stride = (uint32_t)(size / vertexCount);
-	vertexBuffer->m_maxSize = size;
 	CreateBuffer( bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer->m_buffer, vertexBuffer->m_deviceMemory );
 
 	CopyBuffer( stagingBuffer, vertexBuffer->m_buffer, bufferSize );
@@ -823,7 +821,7 @@ VertexBuffer* Renderer::CreateVertexBuffer( void* vertexData, uint64_t size, uin
 
 UniformBuffer* Renderer::CreateUniformBuffer( uint64_t size )
 {
-	UniformBuffer* uniformBuffer = new UniformBuffer( m_device );
+	UniformBuffer* uniformBuffer = new UniformBuffer( m_device, size );
 	uniformBuffer->m_stride = size;
 	uniformBuffer->m_maxSize = size;
 	CreateBuffer( size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffer->m_buffer, uniformBuffer->m_uniformBufferMemory );
@@ -853,14 +851,15 @@ VertexBufferBinding Renderer::AddVertsDataToSharedVertexBuffer( void* vertexData
 	memcpy( data, vertexData, (size_t)bufferSize );
 	vkUnmapMemory( m_device, stagingBufferMemory );
 
-	VkDeviceSize dstOffset = (VkDeviceSize)m_sharedMeshVertexBuffer->m_vertexCount * (VkDeviceSize)m_sharedMeshVertexBuffer->m_stride;
+	VkDeviceSize dstOffset;
+	bool result = m_sharedMeshVertexBuffer->FindProperPositionForSizeInBuffer( dstOffset, size );
 
 	// if the shared buffer is full, create a bigger one
-	if (dstOffset + vertexCount * m_sharedMeshVertexBuffer->m_stride > m_sharedMeshVertexBuffer->m_maxSize) {
+	if (!result) {
 		VkDeviceSize newSize = m_sharedMeshVertexBuffer->m_maxSize;
 		do { // calculate the new size: multiply the size by 2 until it reaches the requirement
 			newSize *= 2;
-		} while (dstOffset + vertexCount * m_sharedMeshVertexBuffer->m_stride >= newSize);
+		} while (m_sharedMeshVertexBuffer->m_maxSize + (uint64_t)vertexCount * m_sharedMeshVertexBuffer->m_stride >= newSize);
 
 		// create a new staging buffer
 		VkBuffer newStagingBuffer;
@@ -868,8 +867,8 @@ VertexBufferBinding Renderer::AddVertsDataToSharedVertexBuffer( void* vertexData
 		CreateBuffer( newSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, newStagingBuffer, newStagingBufferMemory );
 
 		// copy the data from old shared buffer to staging buffer
-		if (dstOffset != 0) {
-			CopyBuffer( m_sharedMeshVertexBuffer->m_buffer, newStagingBuffer, dstOffset, 0, 0 );
+		if (m_sharedMeshVertexBuffer->m_maxSize != 0) {
+			CopyBuffer( m_sharedMeshVertexBuffer->m_buffer, newStagingBuffer, m_sharedMeshVertexBuffer->m_maxSize, 0, 0 );
 		}
 
 		// destroy the old shared buffer
@@ -877,20 +876,23 @@ VertexBufferBinding Renderer::AddVertsDataToSharedVertexBuffer( void* vertexData
 		vkFreeMemory( m_device, m_sharedMeshVertexBuffer->m_deviceMemory, nullptr );
 
 		// create the new shared buffer
-		m_sharedMeshVertexBuffer->m_maxSize = newSize;
+		VkDeviceSize oldSize = m_sharedMeshVertexBuffer->m_maxSize;
+		m_sharedMeshVertexBuffer->EnlargeBuffer( newSize );
+
 		CreateBuffer( newSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_sharedMeshVertexBuffer->m_buffer, m_sharedMeshVertexBuffer->m_deviceMemory );
 
 		// copy the data from staging buffer to new shared buffer
-		if (dstOffset != 0) {
-			CopyBuffer( newStagingBuffer, m_sharedMeshVertexBuffer->m_buffer, dstOffset, 0, 0 );
+		if (oldSize != 0) {
+			CopyBuffer( newStagingBuffer, m_sharedMeshVertexBuffer->m_buffer, oldSize, 0, 0 );
 		}
 
 		// destroy staging buffer
 		vkDestroyBuffer( m_device, newStagingBuffer, nullptr );
 		vkFreeMemory( m_device, newStagingBufferMemory, nullptr );
+
+		m_sharedMeshVertexBuffer->FindProperPositionForSizeInBuffer( dstOffset, size );
 	}
 
-	m_sharedMeshVertexBuffer->m_vertexCount += vertexCount;
 	CopyBuffer( stagingBuffer, m_sharedMeshVertexBuffer->m_buffer, bufferSize, 0, dstOffset );
 	vkDestroyBuffer( m_device, stagingBuffer, nullptr );
 	vkFreeMemory( m_device, stagingBufferMemory, nullptr );
@@ -916,14 +918,15 @@ IndexBufferBinding Renderer::AddIndicesDataToSharedIndexBuffer( void* indexData,
 	memcpy( data, indexData, (size_t)bufferSize );
 	vkUnmapMemory( m_device, stagingBufferMemory );
 
-	VkDeviceSize dstOffset = (VkDeviceSize)m_sharedMeshIndexBuffer->m_indexCount * intStride;
+	VkDeviceSize dstOffset;
+	bool result = m_sharedMeshIndexBuffer->FindProperPositionForSizeInBuffer( dstOffset, size );
 
 	// if the shared buffer is full, create a bigger one
-	if (dstOffset + indexCount * intStride > m_sharedMeshIndexBuffer->m_maxSize) {
+	if (!result) {
 		VkDeviceSize newSize = m_sharedMeshIndexBuffer->m_maxSize;
 		do { // calculate the new size: multiply the size by 2 until it reaches the requirement
 			newSize *= 2;
-		} while (dstOffset + indexCount * intStride >= newSize);
+		} while (m_sharedMeshIndexBuffer->m_maxSize + indexCount * intStride >= newSize);
 
 		// create a new staging buffer
 		VkBuffer newStagingBuffer;
@@ -931,8 +934,8 @@ IndexBufferBinding Renderer::AddIndicesDataToSharedIndexBuffer( void* indexData,
 		CreateBuffer( newSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, newStagingBuffer, newStagingBufferMemory );
 
 		// copy the data from old shared buffer to staging buffer
-		if (dstOffset != 0) {
-			CopyBuffer( m_sharedMeshIndexBuffer->m_buffer, newStagingBuffer, dstOffset, 0, 0 );
+		if (m_sharedMeshIndexBuffer->m_maxSize != 0) {
+			CopyBuffer( m_sharedMeshIndexBuffer->m_buffer, newStagingBuffer, m_sharedMeshIndexBuffer->m_maxSize, 0, 0 );
 		}
 
 		// destroy the old shared buffer
@@ -940,17 +943,19 @@ IndexBufferBinding Renderer::AddIndicesDataToSharedIndexBuffer( void* indexData,
 		vkFreeMemory( m_device, m_sharedMeshIndexBuffer->m_deviceMemory, nullptr );
 
 		// create the new shared buffer
-		m_sharedMeshIndexBuffer->m_maxSize = newSize;
+		VkDeviceSize oldSize = m_sharedMeshIndexBuffer->m_maxSize;
+		m_sharedMeshIndexBuffer->EnlargeBuffer( newSize );
 		CreateBuffer( newSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_sharedMeshIndexBuffer->m_buffer, m_sharedMeshIndexBuffer->m_deviceMemory );
 
 		// copy the data from staging buffer to new shared buffer
-		if (dstOffset != 0) {
-			CopyBuffer( newStagingBuffer, m_sharedMeshIndexBuffer->m_buffer, dstOffset, 0, 0 );
+		if (oldSize != 0) {
+			CopyBuffer( newStagingBuffer, m_sharedMeshIndexBuffer->m_buffer, oldSize, 0, 0 );
 		}
 
 		// destroy staging buffer
 		vkDestroyBuffer( m_device, newStagingBuffer, nullptr );
 		vkFreeMemory( m_device, newStagingBufferMemory, nullptr );
+		m_sharedMeshIndexBuffer->FindProperPositionForSizeInBuffer( dstOffset, size );
 	}
 
 	m_sharedMeshIndexBuffer->m_indexCount += indexCount;
@@ -972,20 +977,26 @@ UniformBufferBinding Renderer::AddDataToSharedUniformBuffer( UniformBufferDataBi
 	binding.m_flags = flags;
 	if (flags & UNIFORM_BUFFER_USE_MODEL_CONSTANTS_BINDING_2) {
 		for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
-			VkDeviceSize dstOffset = m_sharedModelUniformBuffers[i]->m_currentOffset;
-// 			VkDeviceSize const maxSize = m_sharedModelUniformBuffers[i]->m_maxSize;
-// 			if (dstOffset + sizeof( ModelUniformBufferObject ) >= maxSize) {
-// 				VkDeviceSize newSize = maxSize;
-// 				do {
-// 					newSize *= 2;
-// 				} while (dstOffset + sizeof( ModelUniformBufferObject ) >= newSize);
-// 
-// 			}
-			m_sharedModelUniformBuffers[i]->m_currentOffset += sizeof( ModelUniformBufferObject );
-			binding.m_modelUniformBufferOffset = m_sharedModelUniformBuffers[i]->m_currentOffset;
+			VkDeviceSize dstOffset;
+			bool result = m_sharedModelUniformBuffers[i]->FindProperPositionForSizeInBuffer( dstOffset, sizeof( ModelUniformBufferObject ) );
+			if (result) {
+				binding.m_modelUniformBufferOffset = dstOffset;
+			}
+			else {
+				throw std::runtime_error( "failed to allocate uniform buffer memory!" );
+			}
 		}
 	}
 	return binding;
+}
+
+void Renderer::ReturnMemoryToSharedBuffer( VertexBufferBinding const& vBinding, IndexBufferBinding const& iBinding, UniformBufferBinding const& uBinding )
+{
+	vBinding.m_vertexBuffer->ReturnMemory( vBinding.m_vertexBufferOffset, vBinding.m_vertexBufferVertexCount * vBinding.m_vertexBuffer->m_stride );
+	iBinding.m_indexBuffer->ReturnMemory( iBinding.m_indexBufferOffset, iBinding.m_indexBufferIndexCount * sizeof( uint16_t ) );
+	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+		m_sharedModelUniformBuffers[i]->ReturnMemory( uBinding.m_modelUniformBufferOffset, sizeof( ModelUniformBufferObject ) );
+	}
 }
 
 void Renderer::CleanupSwapChain()
@@ -1023,9 +1034,8 @@ VertexBuffer* Renderer::CreateSharedVertexBuffer( uint64_t size, uint32_t stride
 {
 	VkDeviceSize bufferSize = size;
 
-	VertexBuffer* vertexBuffer = new VertexBuffer( m_device, 0 );
+	VertexBuffer* vertexBuffer = new VertexBuffer( m_device, size );
 	vertexBuffer->m_stride = stride;
-	vertexBuffer->m_maxSize = size;
 	CreateBuffer( bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer->m_buffer, vertexBuffer->m_deviceMemory );
 
 	return vertexBuffer;
@@ -1035,8 +1045,7 @@ IndexBuffer* Renderer::CreateSharedIndexBuffer( uint64_t size )
 {
 	VkDeviceSize bufferSize = size;
 
-	IndexBuffer* indexBuffer = new IndexBuffer( m_device, 0 );
-	indexBuffer->m_maxSize = size;
+	IndexBuffer* indexBuffer = new IndexBuffer( m_device, 0, size );
 	CreateBuffer( bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, indexBuffer->m_buffer, indexBuffer->m_deviceMemory );
 
 	return indexBuffer;
@@ -1044,7 +1053,7 @@ IndexBuffer* Renderer::CreateSharedIndexBuffer( uint64_t size )
 
 UniformBuffer* Renderer::CreateSharedUniformBuffer( uint64_t size, uint32_t stride )
 {
-	UniformBuffer* uniformBuffer = new UniformBuffer( m_device );
+	UniformBuffer* uniformBuffer = new UniformBuffer( m_device, size );
 	uniformBuffer->m_stride = stride;
 	uniformBuffer->m_maxSize = size;
 	CreateBuffer( size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffer->m_buffer, uniformBuffer->m_uniformBufferMemory );

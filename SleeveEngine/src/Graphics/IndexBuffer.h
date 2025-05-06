@@ -1,5 +1,7 @@
 #pragma once
 #include <vulkan/vulkan.h>
+#include <vector>
+#include "Graphics/GraphicsCommon.h"
 
 class IndexBuffer {
 public:
@@ -10,11 +12,15 @@ public:
 	};
 protected:
 	friend class Renderer;
-	IndexBuffer( VkDevice device, uint32_t indexCount ) :m_device( device ), m_indexCount( indexCount ) {};
+	IndexBuffer( VkDevice device, uint32_t indexCount, uint64_t size );;
+	bool FindProperPositionForSizeInBuffer( uint64_t& out_pos, uint64_t size );
+	void EnlargeBuffer( uint64_t newSize );
+	void ReturnMemory( uint64_t offset, uint64_t size );
 
 	uint64_t m_maxSize = 0;
 	uint32_t m_indexCount = 0;
-	VkDevice m_device;
-	VkBuffer m_buffer;
-	VkDeviceMemory m_deviceMemory;
+	VkDevice m_device = nullptr;
+	VkBuffer m_buffer = nullptr;
+	VkDeviceMemory m_deviceMemory = nullptr;
+	std::vector<BufferMemoryBlock> m_memoryBlocks;
 };

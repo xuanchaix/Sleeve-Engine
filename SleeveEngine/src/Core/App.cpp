@@ -4,6 +4,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include "Entity/Entity.h"
+#include <chrono>
 
 std::vector<Entity3D*> entities;
 extern PerspectiveCamera* globalCamera;
@@ -51,6 +52,20 @@ void App::Exit()
 void App::BeginFrame()
 {
 	g_theRenderer->BeginFrame();
+// 	for (int i = 0; i < 20; ++i) {
+// 		delete entities[i];
+// 	}
+// 	for (int i = 0; i < 20; ++i) {
+// 		Entity3D* newEntity = new Entity3D( Vec3( 0.f, 0.5f * (float)i, -0.5f * (float)i ) );
+// 		entities[i] = newEntity;
+// 	}
+// 	auto startTime = std::chrono::high_resolution_clock::now();
+// 	for (int i = 0; i < 20; ++i) {
+// 		entities[i]->BeginPlay();
+// 	}
+// 	auto currentTime = std::chrono::high_resolution_clock::now();
+// 	float time = std::chrono::duration<float, std::chrono::seconds::period>( currentTime - startTime ).count();
+// 	std::cout << "Time: " << time << std::endl;
 }
 
 void App::RunFrame()
