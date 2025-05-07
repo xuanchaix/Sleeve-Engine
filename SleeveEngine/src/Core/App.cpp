@@ -27,10 +27,14 @@ void App::Initialize()
 void App::Run()
 {
 	while (!glfwWindowShouldClose( m_window )) {
+		auto startTime = std::chrono::high_resolution_clock::now();
 		glfwPollEvents();
 		BeginFrame();
 		RunFrame();
 		EndFrame();
+		auto currentTime = std::chrono::high_resolution_clock::now();
+		float time = std::chrono::duration<float, std::chrono::seconds::period>( currentTime - startTime ).count();
+		std::cout << "Time: " << time << std::endl;
 	}
 }
 
@@ -52,20 +56,16 @@ void App::Exit()
 void App::BeginFrame()
 {
 	g_theRenderer->BeginFrame();
-// 	for (int i = 0; i < 20; ++i) {
-// 		delete entities[i];
-// 	}
-// 	for (int i = 0; i < 20; ++i) {
-// 		Entity3D* newEntity = new Entity3D( Vec3( 0.f, 0.5f * (float)i, -0.5f * (float)i ) );
-// 		entities[i] = newEntity;
-// 	}
-// 	auto startTime = std::chrono::high_resolution_clock::now();
-// 	for (int i = 0; i < 20; ++i) {
-// 		entities[i]->BeginPlay();
-// 	}
-// 	auto currentTime = std::chrono::high_resolution_clock::now();
-// 	float time = std::chrono::duration<float, std::chrono::seconds::period>( currentTime - startTime ).count();
-// 	std::cout << "Time: " << time << std::endl;
+	for (int i = 0; i < 1000; ++i) {
+		delete entities[i];
+	}
+	for (int i = 0; i < 1000; ++i) {
+		Entity3D* newEntity = new Entity3D( Vec3( 0.f, 0.5f * (float)i, -0.5f * (float)i ) );
+		entities[i] = newEntity;
+	}
+	for (int i = 0; i < 1000; ++i) {
+		entities[i]->BeginPlay();
+	}
 }
 
 void App::RunFrame()

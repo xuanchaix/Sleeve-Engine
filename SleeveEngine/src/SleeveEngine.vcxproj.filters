@@ -57,6 +57,9 @@
     <ClCompile Include="Graphics\Descriptor.cpp">
       <Filter>Graphics</Filter>
     </ClCompile>
+    <ClCompile Include="Graphics\StagingBuffer.cpp">
+      <Filter>Graphics</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Math\Vec2.h">
@@ -138,6 +141,9 @@
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="Graphics\Descriptor.h">
+      <Filter>Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\StagingBuffer.h">
       <Filter>Graphics</Filter>
     </ClInclude>
   </ItemGroup>

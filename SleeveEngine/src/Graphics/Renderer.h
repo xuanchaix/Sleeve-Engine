@@ -1,5 +1,4 @@
 #pragma once
-#include <vulkan/vulkan.h>
 
 #include <iostream>
 #include <stdexcept>
@@ -82,6 +81,10 @@ public:
 	UniformBufferBinding AddDataToSharedUniformBuffer( UniformBufferDataBindingFlags flags );
 	void ReturnMemoryToSharedBuffer( VertexBufferBinding const& vBinding, IndexBufferBinding const& iBinding, UniformBufferBinding const& uBinding );
 protected:
+	void DeferredDestroyBuffer( UniformBuffer* buffer );
+	void DeferredDestroyBuffer( VertexBuffer* buffer );
+	void DeferredDestroyBuffer( IndexBuffer* buffer );
+	void DeferredDestroyBuffer( VkBuffer buffer, VkDeviceMemory deviceMemory );
 	void CreateInstance();
 
 	void SetupDebugMessenger();
@@ -100,7 +103,7 @@ protected:
 
 	void CreateFramebuffers();
 
-	void CreateCommandPool();
+	void CreateCommandPools();
 
 	void CreateDepthResources();
 
@@ -115,6 +118,8 @@ protected:
 	DescriptorPools* GetOrCreateDescriptorPools( uint8_t numOfUniformBuffers, uint8_t numOfSamplers );
 
 	void CreateCommandBuffers();
+
+	void CreateStagingBuffer();
 
 	void CreateSyncObjects();
 
@@ -160,6 +165,8 @@ protected:
 
 	bool CheckValidationLayerSupport();
 
+	int GetTransferQueueFamily();
+
 	VkFormat FindSupportedFormat( const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features );
 
 	VkFormat FindDepthFormat();
@@ -185,6 +192,7 @@ protected:
 	VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
 	VkQueue m_graphicsQueue;
 	VkQueue m_presentQueue;
+	VkQueue m_transferQueue;
 	VkSurfaceKHR m_surface;
 	VkSwapchainKHR m_swapChain;
 	std::vector<VkImage> m_swapChainImages;
@@ -198,11 +206,15 @@ protected:
 	VkSampler m_textureSampler;
 	std::unordered_map<uint64_t, DescriptorPools*> m_descriptorPoolsDictionary;
 	Shader* m_currentShader = nullptr;
+	std::vector<VkCommandPool> m_transferCommandPools;
+	std::vector<VkCommandBuffer> m_transferCommandBuffers;
 
 	std::vector<VkCommandBuffer> m_commandBuffers;
 	std::vector<VkSemaphore> m_imageAvailableSemaphores;
 	std::vector<VkSemaphore> m_renderFinishedSemaphores;
+	std::vector<VkSemaphore> m_transferCompleteSemaphores;
 	std::vector<VkFence> m_inFlightFences;
+	std::vector<VkFence> m_transferFences;
 
 	std::vector<VkFramebuffer> m_swapChainFramebuffers;
 	uint32_t m_currentFrame = 0;
@@ -212,4 +224,8 @@ protected:
 	VertexBuffer* m_sharedMeshVertexBuffer = nullptr;
 	IndexBuffer* m_sharedMeshIndexBuffer = nullptr;
 	std::array<UniformBuffer*, MAX_FRAMES_IN_FLIGHT> m_sharedModelUniformBuffers;
+
+	std::vector<BufferCopyCommand> m_copyCommands;
+	std::vector<BufferPendingToDestroy> m_pendingDestroyBuffers;
+	std::vector<StagingBuffer*> m_stagingBuffers;
 };

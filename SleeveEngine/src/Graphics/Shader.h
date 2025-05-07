@@ -1,6 +1,5 @@
 #pragma once
 #include "GraphicsFwd.h"
-#include <vulkan/vulkan.h>
 #include <vector>
 #include <string>
 

@@ -1,4 +1,5 @@
 #include "Graphics/Renderer.h"
+#include <vulkan/vulkan.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
@@ -7,6 +8,7 @@
 #include <GLFW/glfw3.h>
 
 #include "Core/App.h"
+#include "Graphics/StagingBuffer.h"
 
 PerspectiveCamera* globalCamera = nullptr;
 
@@ -20,12 +22,13 @@ void Renderer::InitVulkan()
 	CreateSwapChain();
 	CreateSwapChainImageViews();
 	CreateRenderPass();
-	CreateCommandPool();
+	CreateCommandPools();
 	CreateDepthResources();
 	CreateFramebuffers();
 	CreateTextureSampler();
 	CreateCommandBuffers();
 	CreateSyncObjects();
+	CreateStagingBuffer();
 
 	m_sharedMeshVertexBuffer = CreateSharedVertexBuffer( INITIAL_SHARED_VERTEX_BUFFER_MAX_SIZE, sizeof( VertexPCU3D ) );
 	m_sharedMeshIndexBuffer = CreateSharedIndexBuffer( INITIAL_SHARED_INDEX_BUFFER_MAX_SIZE );
@@ -48,6 +51,7 @@ void Renderer::Cleanup()
 	delete m_sharedMeshIndexBuffer;
 	delete m_sharedMeshVertexBuffer;
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+		delete m_stagingBuffers[i];
 		delete m_sharedModelUniformBuffers[i];
 	}
 	vkDestroySampler( m_device, m_textureSampler, nullptr );
@@ -59,9 +63,12 @@ void Renderer::Cleanup()
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 		vkDestroySemaphore( m_device, m_renderFinishedSemaphores[i], nullptr );
 		vkDestroySemaphore( m_device, m_imageAvailableSemaphores[i], nullptr );
+		vkDestroySemaphore( m_device, m_transferCompleteSemaphores[i], nullptr );
+		vkDestroyFence( m_device, m_inFlightFences[i], nullptr );
+		vkDestroyFence( m_device, m_transferFences[i], nullptr );
 	}
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-		vkDestroyFence( m_device, m_inFlightFences[i], nullptr );
+		vkDestroyCommandPool( m_device, m_transferCommandPools[i], nullptr);
 	}
 
 	vkDestroyCommandPool( m_device, m_commandPool, nullptr );
@@ -81,14 +88,17 @@ void Renderer::WaitForCleanup()
 {
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
 		vkWaitForFences( m_device, 1, &m_inFlightFences[i], VK_TRUE, UINT64_MAX );
+		vkWaitForFences( m_device, 1, &m_transferFences[i], VK_TRUE, UINT64_MAX );
 	}
 	vkQueueWaitIdle( m_graphicsQueue );
 	vkQueueWaitIdle( m_presentQueue );
+	vkQueueWaitIdle( m_transferQueue );
 }
 
 void Renderer::BeginFrame()
 {
-	vkWaitForFences( m_device, 1, &m_inFlightFences[m_currentFrame], VK_TRUE, UINT64_MAX );
+	VkFence fences[] = { m_inFlightFences[m_currentFrame], m_transferFences[m_currentFrame] };
+	vkWaitForFences( m_device, 2, fences, VK_TRUE, UINT64_MAX );
 
 	VkResult result = vkAcquireNextImageKHR( m_device, m_swapChain, UINT64_MAX, m_imageAvailableSemaphores[m_currentFrame], VK_NULL_HANDLE, &m_curImageIndex );
 
@@ -101,7 +111,7 @@ void Renderer::BeginFrame()
 	}
 
 	// Only reset the fence if we are submitting work
-	vkResetFences( m_device, 1, &m_inFlightFences[m_currentFrame] );
+	vkResetFences( m_device, 2, fences );
 
 	vkResetCommandBuffer( m_commandBuffers[m_currentFrame], 0 );
 
@@ -113,6 +123,18 @@ void Renderer::BeginFrame()
 	if (vkBeginCommandBuffer( m_commandBuffers[m_currentFrame], &beginInfo ) != VK_SUCCESS) {
 		throw std::runtime_error( "failed to begin recording command buffer!" );
 	}
+
+	if (vkResetCommandPool( m_device, m_transferCommandPools[m_currentFrame], 0) != VK_SUCCESS) {
+		throw std::runtime_error( "failed to reset transfer command buffer!" );
+	}
+	
+	m_stagingBuffers[m_currentFrame]->Refresh();
+
+	VkCommandBufferBeginInfo transferBeginInfo{};
+	transferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	transferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	vkBeginCommandBuffer( m_transferCommandBuffers[m_currentFrame], &transferBeginInfo);
 
 	for (auto& pair : m_descriptorPoolsDictionary) {
 		pair.second->BeginFrame();
@@ -159,21 +181,46 @@ void Renderer::EndFrame()
 		throw std::runtime_error( "failed to record command buffer!" );
 	}
 
-	VkSubmitInfo submitInfo{};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	for (size_t i = 0; i < m_copyCommands.size(); ++i) {
+		VkBufferCopy copyRegion{};
+		copyRegion.dstOffset = m_copyCommands[i].m_dstOffset;
+		copyRegion.srcOffset = m_copyCommands[i].m_srcOffset;
+		copyRegion.size = m_copyCommands[i].m_size;
+		vkCmdCopyBuffer(
+			m_transferCommandBuffers[m_currentFrame],
+			m_copyCommands[i].m_srcBuffer,
+			m_copyCommands[i].m_dstBuffer,
+			1,
+			&copyRegion
+		);
+	}
+	m_copyCommands.clear();
+	vkEndCommandBuffer( m_transferCommandBuffers[m_currentFrame]);
 
-	VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphores[m_currentFrame] };
-	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = waitSemaphores;
-	submitInfo.pWaitDstStageMask = waitStages;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &m_commandBuffers[m_currentFrame];
+	VkSubmitInfo transferQueueSubmitInfo{};
+	transferQueueSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	transferQueueSubmitInfo.commandBufferCount = 1;
+	transferQueueSubmitInfo.pCommandBuffers = &m_transferCommandBuffers[m_currentFrame];
+	transferQueueSubmitInfo.signalSemaphoreCount = 1;
+	transferQueueSubmitInfo.pSignalSemaphores = &m_transferCompleteSemaphores[m_currentFrame];
+
+	vkQueueSubmit( m_transferQueue, 1, &transferQueueSubmitInfo, m_transferFences[m_currentFrame]);
+
+	VkSubmitInfo graphicsQueueSubmitInfo{};
+	graphicsQueueSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+	VkSemaphore waitSemaphores[] = { m_imageAvailableSemaphores[m_currentFrame], m_transferCompleteSemaphores[m_currentFrame] };
+	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT };
+	graphicsQueueSubmitInfo.waitSemaphoreCount = 2;
+	graphicsQueueSubmitInfo.pWaitSemaphores = waitSemaphores;
+	graphicsQueueSubmitInfo.pWaitDstStageMask = waitStages;
+	graphicsQueueSubmitInfo.commandBufferCount = 1;
+	graphicsQueueSubmitInfo.pCommandBuffers = &m_commandBuffers[m_currentFrame];
 	VkSemaphore signalSemaphores[] = { m_renderFinishedSemaphores[m_currentFrame] };
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = signalSemaphores;
+	graphicsQueueSubmitInfo.signalSemaphoreCount = 1;
+	graphicsQueueSubmitInfo.pSignalSemaphores = signalSemaphores;
 
-	if (vkQueueSubmit( m_graphicsQueue, 1, &submitInfo, m_inFlightFences[m_currentFrame] ) != VK_SUCCESS) {
+	if (vkQueueSubmit( m_graphicsQueue, 1, &graphicsQueueSubmitInfo, m_inFlightFences[m_currentFrame] ) != VK_SUCCESS) {
 		throw std::runtime_error( "failed to submit draw command buffer!" );
 	}
 
@@ -197,6 +244,18 @@ void Renderer::EndFrame()
 		throw std::runtime_error( "failed to present swap chain image!" );
 	}
 
+	auto it = m_pendingDestroyBuffers.begin();
+	while (it != m_pendingDestroyBuffers.end()) {
+		if (vkGetFenceStatus( m_device, m_transferFences[m_currentFrame] ) == VK_SUCCESS) {
+			vkDestroyBuffer( m_device, it->m_buffer, nullptr );
+			vkFreeMemory( m_device, it->m_deviceMemory, nullptr );
+			it = m_pendingDestroyBuffers.erase( it );
+		}
+		else {
+			++it;
+		}
+	}
+
 	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
@@ -211,6 +270,26 @@ void Renderer::BeginCamera( PerspectiveCamera const& camera )
 void Renderer::EndCamera( PerspectiveCamera const& camera )
 {
 
+}
+
+void Renderer::DeferredDestroyBuffer( UniformBuffer* buffer )
+{
+	m_pendingDestroyBuffers.push_back( BufferPendingToDestroy{ buffer->m_buffer, buffer->m_uniformBufferMemory } );
+}
+
+void Renderer::DeferredDestroyBuffer( VertexBuffer* buffer )
+{
+	m_pendingDestroyBuffers.push_back( BufferPendingToDestroy{ buffer->m_buffer, buffer->m_deviceMemory } );
+}
+
+void Renderer::DeferredDestroyBuffer( IndexBuffer* buffer )
+{
+	m_pendingDestroyBuffers.push_back( BufferPendingToDestroy{ buffer->m_buffer, buffer->m_deviceMemory } );
+}
+
+void Renderer::DeferredDestroyBuffer( VkBuffer buffer, VkDeviceMemory deviceMemory )
+{
+	m_pendingDestroyBuffers.push_back( BufferPendingToDestroy{ buffer, deviceMemory } );
 }
 
 void Renderer::CreateInstance()
@@ -309,6 +388,15 @@ void Renderer::CreateLogicalDevice()
 		queueCreateInfos.push_back( queueCreateInfo );
 	}
 
+	uint32_t transferQueueFamily = GetTransferQueueFamily();
+
+	VkDeviceQueueCreateInfo queueCreateInfo{};
+	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	queueCreateInfo.queueFamilyIndex = transferQueueFamily;
+	queueCreateInfo.queueCount = 1;
+	queueCreateInfo.pQueuePriorities = &queuePriority;
+	queueCreateInfos.push_back( queueCreateInfo );
+
 	VkPhysicalDeviceFeatures deviceFeatures{};
 	deviceFeatures.samplerAnisotropy = VK_TRUE;
 	VkDeviceCreateInfo createInfo{};
@@ -325,6 +413,7 @@ void Renderer::CreateLogicalDevice()
 
 	vkGetDeviceQueue( m_device, indices.m_graphicsFamily.value(), 0, &m_graphicsQueue );
 	vkGetDeviceQueue( m_device, indices.m_presentFamily.value(), 0, &m_presentQueue );
+	vkGetDeviceQueue( m_device, transferQueueFamily, 0, &m_transferQueue );
 }
 
 void Renderer::CreateSwapChain()
@@ -471,7 +560,7 @@ void Renderer::CreateFramebuffers()
 	}
 }
 
-void Renderer::CreateCommandPool()
+void Renderer::CreateCommandPools()
 {
 	QueueFamilyIndices queueFamilyIndices = FindQueueFamilies( m_physicalDevice );
 
@@ -483,6 +572,47 @@ void Renderer::CreateCommandPool()
 	if (vkCreateCommandPool( m_device, &poolInfo, nullptr, &m_commandPool ) != VK_SUCCESS) {
 		throw std::runtime_error( "failed to create command pool!" );
 	}
+
+	m_transferCommandPools.resize( MAX_FRAMES_IN_FLIGHT );
+
+	VkCommandPoolCreateInfo transferPoolInfo{};
+	transferPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	transferPoolInfo.queueFamilyIndex = GetTransferQueueFamily();
+	transferPoolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+
+	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+		if (vkCreateCommandPool( m_device, &transferPoolInfo, nullptr, &m_transferCommandPools[i]) != VK_SUCCESS) {
+			throw std::runtime_error( "failed to create command pool!" );
+		}
+	}
+}
+
+int Renderer::GetTransferQueueFamily()
+{
+	uint32_t queueFamilyCount = 0;
+	vkGetPhysicalDeviceQueueFamilyProperties( m_physicalDevice, &queueFamilyCount, nullptr );
+	std::vector<VkQueueFamilyProperties> queueFamilies( queueFamilyCount );
+	vkGetPhysicalDeviceQueueFamilyProperties( m_physicalDevice, &queueFamilyCount, queueFamilies.data() );
+
+	int transferQueueFamily = -1;
+	for (int i = 0; i < queueFamilies.size(); ++i) {
+		if ((queueFamilies[i].queueFlags & VK_QUEUE_TRANSFER_BIT) &&
+			!(queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)) {
+			transferQueueFamily = i;
+			break;
+		}
+	}
+
+	// Fallback to a graphics-capable queue if no dedicated transfer queue exists
+	if (transferQueueFamily == -1) {
+		for (int i = 0; i < queueFamilies.size(); ++i) {
+			if (queueFamilies[i].queueFlags & VK_QUEUE_TRANSFER_BIT) {
+				transferQueueFamily = i;
+				break;
+			}
+		}
+	}
+	return transferQueueFamily;
 }
 
 void Renderer::CreateDepthResources()
@@ -611,15 +741,41 @@ void Renderer::CreateCommandBuffers()
 	if (vkAllocateCommandBuffers( m_device, &allocInfo, m_commandBuffers.data() ) != VK_SUCCESS) {
 		throw std::runtime_error( "failed to allocate command buffers!" );
 	}
+	// 	VkMemoryRequirements memRequirements;
+	// 	vkGetBufferMemoryRequirements( m_device, m_vertexBuffer->m_buffer, &memRequirements );
 
-// 	VkMemoryRequirements memRequirements;
-// 	vkGetBufferMemoryRequirements( m_device, m_vertexBuffer->m_buffer, &memRequirements );
+	m_transferCommandBuffers.resize( MAX_FRAMES_IN_FLIGHT );
+	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+		// Allocate command buffers
+		allocInfo = {};
+		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.commandPool = m_transferCommandPools[i];
+		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocInfo.commandBufferCount = 1;
+
+		if (vkAllocateCommandBuffers( m_device, &allocInfo, &m_transferCommandBuffers[i]) != VK_SUCCESS) {
+			throw std::runtime_error( "failed to allocate transfer command buffers!" );
+		}
+	}
+}
+
+void Renderer::CreateStagingBuffer()
+{
+	m_stagingBuffers.resize( MAX_FRAMES_IN_FLIGHT );
+	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+		m_stagingBuffers[i] = new StagingBuffer(m_device, STAGING_BUFFER_MAX_SIZE);
+		CreateBuffer( STAGING_BUFFER_MAX_SIZE, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_stagingBuffers[i]->m_stagingBuffer, m_stagingBuffers[i]->m_stagingBufferMemory );
+		m_stagingBuffers[i]->m_device = m_device;
+		vkMapMemory( m_device, m_stagingBuffers[i]->m_stagingBufferMemory, 0, STAGING_BUFFER_MAX_SIZE, 0, &m_stagingBuffers[i]->m_mappedData );
+	}
 }
 
 void Renderer::CreateSyncObjects()
 {
 	m_imageAvailableSemaphores.resize( MAX_FRAMES_IN_FLIGHT );
 	m_renderFinishedSemaphores.resize( MAX_FRAMES_IN_FLIGHT );
+	m_transferCompleteSemaphores.resize( MAX_FRAMES_IN_FLIGHT );
+	m_transferFences.resize( MAX_FRAMES_IN_FLIGHT );
 	m_inFlightFences.resize( MAX_FRAMES_IN_FLIGHT );
 
 	VkSemaphoreCreateInfo semaphoreInfo{};
@@ -632,11 +788,14 @@ void Renderer::CreateSyncObjects()
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 		if (vkCreateSemaphore( m_device, &semaphoreInfo, nullptr, &m_imageAvailableSemaphores[i] ) != VK_SUCCESS ||
 			vkCreateSemaphore( m_device, &semaphoreInfo, nullptr, &m_renderFinishedSemaphores[i] ) != VK_SUCCESS ||
+			vkCreateSemaphore( m_device, &semaphoreInfo, nullptr, &m_transferCompleteSemaphores[i]) != VK_SUCCESS ||
+			vkCreateFence( m_device, &fenceInfo, nullptr, &m_transferFences[i]) != VK_SUCCESS ||
 			vkCreateFence( m_device, &fenceInfo, nullptr, &m_inFlightFences[i] ) != VK_SUCCESS) {
 
 			throw std::runtime_error( "failed to create synchronization objects for a frame!" );
 		}
 	}
+
 }
 
 void Renderer::DrawSingleBufferIndexed( VertexBuffer* vertexBuffer, IndexBuffer* indexBuffer, uint64_t vertexOffset, uint64_t indexOffset )
@@ -789,8 +948,9 @@ IndexBuffer* Renderer::CreateIndexBuffer( void* indexData, uint64_t size, uint32
 
 	CopyBuffer( stagingBuffer, indexBuffer->m_buffer, bufferSize );
 
-	vkDestroyBuffer( m_device, stagingBuffer, nullptr );
-	vkFreeMemory( m_device, stagingBufferMemory, nullptr );
+	DeferredDestroyBuffer( stagingBuffer, stagingBufferMemory );
+// 	vkDestroyBuffer( m_device, stagingBuffer, nullptr );
+// 	vkFreeMemory( m_device, stagingBufferMemory, nullptr );
 
 	return indexBuffer;
 }
@@ -813,8 +973,9 @@ VertexBuffer* Renderer::CreateVertexBuffer( void* vertexData, uint64_t size, uin
 	CreateBuffer( bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer->m_buffer, vertexBuffer->m_deviceMemory );
 
 	CopyBuffer( stagingBuffer, vertexBuffer->m_buffer, bufferSize );
-	vkDestroyBuffer( m_device, stagingBuffer, nullptr );
-	vkFreeMemory( m_device, stagingBufferMemory, nullptr );
+	DeferredDestroyBuffer( stagingBuffer, stagingBufferMemory );
+// 	vkDestroyBuffer( m_device, stagingBuffer, nullptr );
+// 	vkFreeMemory( m_device, stagingBufferMemory, nullptr );
 
 	return vertexBuffer;
 }
@@ -842,14 +1003,20 @@ VertexBufferBinding Renderer::AddVertsDataToSharedVertexBuffer( void* vertexData
 {
 	VkDeviceSize bufferSize = size;
 
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMemory;
-	CreateBuffer( bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory );
+// 	VkBuffer stagingBuffer;
+// 	VkDeviceMemory stagingBufferMemory;
+// 	CreateBuffer( bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory );
+// 
+// 	void* data;
+// 	vkMapMemory( m_device, stagingBufferMemory, 0, bufferSize, 0, &data );
+// 	memcpy( data, vertexData, (size_t)bufferSize );
+// 	vkUnmapMemory( m_device, stagingBufferMemory );
 
-	void* data;
-	vkMapMemory( m_device, stagingBufferMemory, 0, bufferSize, 0, &data );
-	memcpy( data, vertexData, (size_t)bufferSize );
-	vkUnmapMemory( m_device, stagingBufferMemory );
+	VkDeviceSize stagingOffset;
+	if (!m_stagingBuffers[m_currentFrame]->FindProperPositionForSizeInBuffer( stagingOffset, bufferSize )) {
+		// Error!
+	}
+	memcpy( (void*)((VkDeviceSize)m_stagingBuffers[m_currentFrame]->m_mappedData + stagingOffset), vertexData, (size_t)bufferSize );
 
 	VkDeviceSize dstOffset;
 	bool result = m_sharedMeshVertexBuffer->FindProperPositionForSizeInBuffer( dstOffset, size );
@@ -862,18 +1029,22 @@ VertexBufferBinding Renderer::AddVertsDataToSharedVertexBuffer( void* vertexData
 		} while (m_sharedMeshVertexBuffer->m_maxSize + (uint64_t)vertexCount * m_sharedMeshVertexBuffer->m_stride >= newSize);
 
 		// create a new staging buffer
-		VkBuffer newStagingBuffer;
-		VkDeviceMemory newStagingBufferMemory;
-		CreateBuffer( newSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, newStagingBuffer, newStagingBufferMemory );
+// 		VkBuffer newStagingBuffer;
+// 		VkDeviceMemory newStagingBufferMemory;
+// 		CreateBuffer( newSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, newStagingBuffer, newStagingBufferMemory );
+
+		VkDeviceSize newStagingOffset;
+		if (!m_stagingBuffers[m_currentFrame]->FindProperPositionForSizeInBuffer( newStagingOffset, bufferSize )) {
+			// Error!
+		}
 
 		// copy the data from old shared buffer to staging buffer
 		if (m_sharedMeshVertexBuffer->m_maxSize != 0) {
-			CopyBuffer( m_sharedMeshVertexBuffer->m_buffer, newStagingBuffer, m_sharedMeshVertexBuffer->m_maxSize, 0, 0 );
+			CopyBuffer( m_sharedMeshVertexBuffer->m_buffer, m_stagingBuffers[m_currentFrame]->m_stagingBuffer, m_sharedMeshVertexBuffer->m_maxSize, 0, newStagingOffset );
 		}
 
 		// destroy the old shared buffer
-		vkDestroyBuffer( m_device, m_sharedMeshVertexBuffer->m_buffer, nullptr );
-		vkFreeMemory( m_device, m_sharedMeshVertexBuffer->m_deviceMemory, nullptr );
+		DeferredDestroyBuffer( m_sharedMeshVertexBuffer );
 
 		// create the new shared buffer
 		VkDeviceSize oldSize = m_sharedMeshVertexBuffer->m_maxSize;
@@ -883,19 +1054,17 @@ VertexBufferBinding Renderer::AddVertsDataToSharedVertexBuffer( void* vertexData
 
 		// copy the data from staging buffer to new shared buffer
 		if (oldSize != 0) {
-			CopyBuffer( newStagingBuffer, m_sharedMeshVertexBuffer->m_buffer, oldSize, 0, 0 );
+			CopyBuffer( m_stagingBuffers[m_currentFrame]->m_stagingBuffer, m_sharedMeshVertexBuffer->m_buffer, oldSize, newStagingOffset, 0 );
 		}
 
 		// destroy staging buffer
-		vkDestroyBuffer( m_device, newStagingBuffer, nullptr );
-		vkFreeMemory( m_device, newStagingBufferMemory, nullptr );
+		//DeferredDestroyBuffer( newStagingBuffer, newStagingBufferMemory );
 
 		m_sharedMeshVertexBuffer->FindProperPositionForSizeInBuffer( dstOffset, size );
 	}
 
-	CopyBuffer( stagingBuffer, m_sharedMeshVertexBuffer->m_buffer, bufferSize, 0, dstOffset );
-	vkDestroyBuffer( m_device, stagingBuffer, nullptr );
-	vkFreeMemory( m_device, stagingBufferMemory, nullptr );
+	CopyBuffer( m_stagingBuffers[m_currentFrame]->m_stagingBuffer, m_sharedMeshVertexBuffer->m_buffer, bufferSize, stagingOffset, dstOffset );
+	//DeferredDestroyBuffer( stagingBuffer, stagingBufferMemory );
 
 	VertexBufferBinding binding;
 	binding.m_vertexBuffer = m_sharedMeshVertexBuffer;
@@ -909,14 +1078,20 @@ IndexBufferBinding Renderer::AddIndicesDataToSharedIndexBuffer( void* indexData,
 	constexpr VkDeviceSize intStride = sizeof( uint16_t );
 	VkDeviceSize bufferSize = size;
 
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMemory;
-	CreateBuffer( bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory );
+// 	VkBuffer stagingBuffer;
+// 	VkDeviceMemory stagingBufferMemory;
+// 	CreateBuffer( bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory );
+// 
+// 	void* data;
+// 	vkMapMemory( m_device, stagingBufferMemory, 0, bufferSize, 0, &data );
+// 	memcpy( data, indexData, (size_t)bufferSize );
+// 	vkUnmapMemory( m_device, stagingBufferMemory );
 
-	void* data;
-	vkMapMemory( m_device, stagingBufferMemory, 0, bufferSize, 0, &data );
-	memcpy( data, indexData, (size_t)bufferSize );
-	vkUnmapMemory( m_device, stagingBufferMemory );
+	VkDeviceSize stagingOffset;
+	if (!m_stagingBuffers[m_currentFrame]->FindProperPositionForSizeInBuffer( stagingOffset, bufferSize )) {
+		// Error!
+	}
+	memcpy( (void*)((VkDeviceSize)m_stagingBuffers[m_currentFrame]->m_mappedData + stagingOffset), indexData, (size_t)bufferSize );
 
 	VkDeviceSize dstOffset;
 	bool result = m_sharedMeshIndexBuffer->FindProperPositionForSizeInBuffer( dstOffset, size );
@@ -929,18 +1104,21 @@ IndexBufferBinding Renderer::AddIndicesDataToSharedIndexBuffer( void* indexData,
 		} while (m_sharedMeshIndexBuffer->m_maxSize + indexCount * intStride >= newSize);
 
 		// create a new staging buffer
-		VkBuffer newStagingBuffer;
-		VkDeviceMemory newStagingBufferMemory;
-		CreateBuffer( newSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, newStagingBuffer, newStagingBufferMemory );
+// 		VkBuffer newStagingBuffer;
+// 		VkDeviceMemory newStagingBufferMemory;
+// 		CreateBuffer( newSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, newStagingBuffer, newStagingBufferMemory );
+		VkDeviceSize newStagingOffset;
+		if (!m_stagingBuffers[m_currentFrame]->FindProperPositionForSizeInBuffer( newStagingOffset, bufferSize )) {
+			// Error!
+		}
 
 		// copy the data from old shared buffer to staging buffer
 		if (m_sharedMeshIndexBuffer->m_maxSize != 0) {
-			CopyBuffer( m_sharedMeshIndexBuffer->m_buffer, newStagingBuffer, m_sharedMeshIndexBuffer->m_maxSize, 0, 0 );
+			CopyBuffer( m_sharedMeshIndexBuffer->m_buffer, m_stagingBuffers[m_currentFrame]->m_stagingBuffer, m_sharedMeshIndexBuffer->m_maxSize, 0, newStagingOffset);
 		}
 
 		// destroy the old shared buffer
-		vkDestroyBuffer( m_device, m_sharedMeshIndexBuffer->m_buffer, nullptr );
-		vkFreeMemory( m_device, m_sharedMeshIndexBuffer->m_deviceMemory, nullptr );
+		DeferredDestroyBuffer( m_sharedMeshIndexBuffer );
 
 		// create the new shared buffer
 		VkDeviceSize oldSize = m_sharedMeshIndexBuffer->m_maxSize;
@@ -949,20 +1127,18 @@ IndexBufferBinding Renderer::AddIndicesDataToSharedIndexBuffer( void* indexData,
 
 		// copy the data from staging buffer to new shared buffer
 		if (oldSize != 0) {
-			CopyBuffer( newStagingBuffer, m_sharedMeshIndexBuffer->m_buffer, oldSize, 0, 0 );
+			CopyBuffer( m_stagingBuffers[m_currentFrame]->m_stagingBuffer, m_sharedMeshIndexBuffer->m_buffer, oldSize, newStagingOffset, 0);
 		}
 
 		// destroy staging buffer
-		vkDestroyBuffer( m_device, newStagingBuffer, nullptr );
-		vkFreeMemory( m_device, newStagingBufferMemory, nullptr );
+		// DeferredDestroyBuffer( newStagingBuffer, newStagingBufferMemory );
 		m_sharedMeshIndexBuffer->FindProperPositionForSizeInBuffer( dstOffset, size );
 	}
 
 	m_sharedMeshIndexBuffer->m_indexCount += indexCount;
-	CopyBuffer( stagingBuffer, m_sharedMeshIndexBuffer->m_buffer, bufferSize, 0, dstOffset );
+	CopyBuffer( m_stagingBuffers[m_currentFrame]->m_stagingBuffer, m_sharedMeshIndexBuffer->m_buffer, bufferSize, stagingOffset, dstOffset );
 
-	vkDestroyBuffer( m_device, stagingBuffer, nullptr );
-	vkFreeMemory( m_device, stagingBufferMemory, nullptr );
+	//DeferredDestroyBuffer( stagingBuffer, stagingBufferMemory );
 
 	IndexBufferBinding binding;
 	binding.m_indexBuffer = m_sharedMeshIndexBuffer;
@@ -1094,15 +1270,27 @@ void Renderer::CreateBuffer( VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
 
 void Renderer::CopyBuffer( VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkDeviceSize srcOffset, VkDeviceSize dstOffset )
 {
-	VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
+	//VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
+	m_copyCommands.push_back( BufferCopyCommand{ srcBuffer, dstBuffer, srcOffset, dstOffset, size } );
 
-	VkBufferCopy copyRegion{};
-	copyRegion.size = size;
-	copyRegion.dstOffset = dstOffset;
-	copyRegion.srcOffset = srcOffset;
-	vkCmdCopyBuffer( commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion );
+// 	VkBufferCopy copyRegion{};
+// 	copyRegion.dstOffset = dstOffset;
+// 	copyRegion.srcOffset = srcOffset;
+// 	copyRegion.size = size;
+// 	vkCmdCopyBuffer(
+// 		m_transferCommandBuffer,
+// 		srcBuffer,
+// 		dstBuffer,
+// 		1,
+// 		&copyRegion
+// 	);
+// 	VkBufferCopy copyRegion{};
+// 	copyRegion.size = size;
+// 	copyRegion.dstOffset = dstOffset;
+// 	copyRegion.srcOffset = srcOffset;
+// 	vkCmdCopyBuffer( commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion );
 
-	EndSingleTimeCommands( commandBuffer );
+	//EndSingleTimeCommands( commandBuffer );
 }
 
 void Renderer::TransitionImageLayout( VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout )

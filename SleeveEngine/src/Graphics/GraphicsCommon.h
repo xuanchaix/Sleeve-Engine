@@ -5,6 +5,7 @@
 class VertexBuffer;
 class IndexBuffer;
 class UniformBuffer;
+class StagingBuffer;
 
 struct EntityUniformBuffers {
 	std::vector<UniformBuffer*> m_uniformBuffersModel;
@@ -45,10 +46,24 @@ struct BufferMemoryBlock {
 	uint64_t m_size;
 };
 
+struct BufferCopyCommand {
+	VkBuffer m_srcBuffer;
+	VkBuffer m_dstBuffer;
+	uint64_t m_srcOffset;
+	uint64_t m_dstOffset;
+	uint64_t m_size;
+};
+
+struct BufferPendingToDestroy {
+	VkBuffer m_buffer;
+	VkDeviceMemory m_deviceMemory;
+};
+
 constexpr uint32_t WINDOW_WIDTH = 1600;
 constexpr uint32_t WINDOW_HEIGHT = 800;
 constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 constexpr uint64_t INITIAL_SHARED_VERTEX_BUFFER_MAX_SIZE = 1000000; // around 1MB
 constexpr uint64_t INITIAL_SHARED_INDEX_BUFFER_MAX_SIZE = 100000; // around 100KB
-constexpr uint64_t INITIAL_MODEL_UNIFORM_BUFFER_MAX_COUNT = 4096;
+constexpr uint64_t STAGING_BUFFER_MAX_SIZE = 64000000; // around 64MB
+constexpr uint64_t INITIAL_MODEL_UNIFORM_BUFFER_MAX_COUNT = 16384;
 constexpr uint64_t INITIAL_MODEL_UNIFORM_BUFFER_MAX_SIZE = sizeof( ModelUniformBufferObject ) * INITIAL_MODEL_UNIFORM_BUFFER_MAX_COUNT;

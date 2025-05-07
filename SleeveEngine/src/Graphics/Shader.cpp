@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <format>
+#include <vulkan/vulkan.h>
 
 #include "Graphics/GraphicsCommon.h"
 #include "Graphics/Renderer.h"
