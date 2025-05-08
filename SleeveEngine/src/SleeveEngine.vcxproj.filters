@@ -60,6 +60,12 @@
     <ClCompile Include="Graphics\StagingBuffer.cpp">
       <Filter>Graphics</Filter>
     </ClCompile>
+    <ClCompile Include="Core\Time.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Clock.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Math\Vec2.h">
@@ -145,6 +151,12 @@
     </ClInclude>
     <ClInclude Include="Graphics\StagingBuffer.h">
       <Filter>Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Time.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Clock.h">
+      <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -1,5 +1,5 @@
 #pragma once
-#include "Core/EngineCommon.h"
+#include "Core/EngineFwdMinor.h"
 
 class App {
 public:

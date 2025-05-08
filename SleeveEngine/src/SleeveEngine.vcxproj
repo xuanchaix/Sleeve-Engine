@@ -20,9 +20,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\App.cpp" />
+    <ClCompile Include="Core\Clock.cpp" />
     <ClCompile Include="Core\EngineCommon.cpp" />
     <ClCompile Include="Core\main.cpp" />
     <ClCompile Include="Core\ResourceManager.cpp" />
+    <ClCompile Include="Core\Time.cpp" />
     <ClCompile Include="Entity\Entity.cpp" />
     <ClCompile Include="Graphics\Camera.cpp" />
     <ClCompile Include="Graphics\Descriptor.cpp" />
@@ -37,10 +39,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\App.h" />
+    <ClInclude Include="Core\Clock.h" />
     <ClInclude Include="Core\Color.h" />
     <ClInclude Include="Core\EngineCommon.h" />
     <ClInclude Include="Core\EngineFwdMinor.h" />
     <ClInclude Include="Core\ResourceManager.h" />
+    <ClInclude Include="Core\Time.h" />
     <ClInclude Include="Entity\Entity.h" />
     <ClInclude Include="Graphics\Camera.h" />
     <ClInclude Include="Graphics\Descriptor.h" />

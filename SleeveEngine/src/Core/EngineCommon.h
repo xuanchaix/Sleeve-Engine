@@ -1,6 +1,10 @@
 #pragma once
-//basic includes
-#include "Core/EngineFwdMinor.h"
 
-// add-ons
-#include "Graphics/GraphicsFwd.h"
+class Renderer;
+class App;
+class ResourceManager;
+
+// global variables
+extern Renderer* g_theRenderer;
+extern App* g_theApp;
+extern ResourceManager* g_theResourceManager;

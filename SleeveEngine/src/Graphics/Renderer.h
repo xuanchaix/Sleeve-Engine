@@ -10,7 +10,8 @@
 #include <array>
 #include <unordered_map>
 
-#include "Core/EngineCommon.h"
+#include "Core/EngineFwdMinor.h"
+#include "Graphics/GraphicsFwd.h"
 #include "Graphics/GraphicsCommon.h"
 
 struct PerspectiveCamera;
