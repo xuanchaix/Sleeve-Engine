@@ -1,4 +1,6 @@
 #include <chrono>
+#include "Core/Time.h"
+
 auto __TimeCPPStartTime = std::chrono::high_resolution_clock::now();
 
 double GetCurrentTimeSeconds()

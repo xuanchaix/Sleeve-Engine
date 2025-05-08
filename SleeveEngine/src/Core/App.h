@@ -13,10 +13,13 @@ public:
 
 	inline bool HasFrameBufferResized() const;
 	inline void SetFrameBufferResized( bool isResized );
+
+	void SetMaxFrameRate( int maxFrameRate );
 protected:
 	void InitWindow();
 	static void FramebufferResizeCallback( GLFWwindow* window, int width, int height );
 	bool m_framebufferResized = false;
+
 public:
 	GLFWwindow* m_window;
 };

@@ -41,12 +41,7 @@ void Entity3D::BeginPlay()
 
 void Entity3D::Update( float deltaSeconds )
 {
-	static auto startTime = std::chrono::high_resolution_clock::now();
-
-	auto currentTime = std::chrono::high_resolution_clock::now();
-	float time = std::chrono::duration<float, std::chrono::seconds::period>( currentTime - startTime ).count();
-
-	m_orientation.yaw = time * 90.0f;
+	m_orientation.yaw += deltaSeconds * 90.0f;
 	CalculateModelMatrix( m_modelMatrix );
 }
 
