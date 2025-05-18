@@ -1,5 +1,6 @@
 #include "Core/App.h"
 #include "Graphics/Renderer.h"
+#include "Input/InputSystem.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -14,9 +15,14 @@ void App::Initialize()
 {
 	InitWindow();
 	g_theResourceManager = new ResourceManager();
+
+	g_theInput = new InputSystem();
+	g_theInput->Initialize();
+
 	globalCamera = new PerspectiveCamera();
+
 	g_theRenderer = new Renderer();
-	g_theRenderer->InitVulkan();
+	g_theRenderer->Initialize();
 	globalCamera->BeginPlay();
 	for (int i = 0; i < 1000; ++i) {
 		Entity3D* newEntity = new Entity3D( Vec3( 0.f, 0.5f * (float)i, -0.5f * (float)i ) );
@@ -43,7 +49,8 @@ void App::Run()
 			currentTime = std::chrono::high_resolution_clock::now();
 			frameTime = std::chrono::duration<float, std::chrono::milliseconds::period>( currentTime - startTime ).count();
 		} 
-		std::cout << "Time: " << frameTime << std::endl;
+		std::cout << "Time: " << 1000.f / frameTime << '\n';
+		//std::cout << g_theInput->m_cursorPosThisFrame.x << " " << g_theInput->m_cursorPosThisFrame.y << std::endl;
 	}
 }
 
@@ -57,6 +64,7 @@ void App::Exit()
 	delete g_theResourceManager;
 	g_theRenderer->Cleanup();
 	delete g_theRenderer;
+	delete g_theInput;
 
 	glfwDestroyWindow( m_window );
 	glfwTerminate();
@@ -65,6 +73,7 @@ void App::Exit()
 void App::BeginFrame()
 {
 	Clock::TickSystemClock();
+	g_theInput->BeginFrame();
 	g_theRenderer->BeginFrame();
 }
 
@@ -82,12 +91,13 @@ void App::RunFrame()
 
 void App::EndFrame()
 {
+	g_theInput->BeginFrame();
 	g_theRenderer->EndFrame();
 }
 
 void App::SetMaxFrameRate( int maxFrameRate )
 {
-	TARGET_FRAME_TIME_MILLISECONDS = 1000.f / maxFrameRate;
+	TARGET_FRAME_TIME_MILLISECONDS = 1000.f / (float)maxFrameRate;
 }
 
 void App::InitWindow()
@@ -97,6 +107,10 @@ void App::InitWindow()
 	m_window = glfwCreateWindow( WINDOW_WIDTH, WINDOW_HEIGHT, "Vulkan", nullptr, nullptr );
 	glfwSetWindowUserPointer( m_window, this );
 	glfwSetFramebufferSizeCallback( m_window, FramebufferResizeCallback );
+	glfwSetKeyCallback( m_window, InputSystem::KeyCallback );
+	glfwSetCursorPosCallback( m_window, InputSystem::CursorPositionCallback );
+	glfwSetMouseButtonCallback( m_window, InputSystem::MouseButtonCallback );
+	//glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 }
 
 void App::FramebufferResizeCallback( GLFWwindow* window, int width, int height )

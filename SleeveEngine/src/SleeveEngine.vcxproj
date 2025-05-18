@@ -22,7 +22,12 @@
     <ClCompile Include="Core\App.cpp" />
     <ClCompile Include="Core\Clock.cpp" />
     <ClCompile Include="Core\EngineCommon.cpp" />
-    <ClCompile Include="Core\main.cpp" />
+    <ClCompile Include="Core\main.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Core\ResourceManager.cpp" />
     <ClCompile Include="Core\Time.cpp" />
     <ClCompile Include="Entity\Entity.cpp" />
@@ -36,6 +41,7 @@
     <ClCompile Include="Graphics\UniformBuffer.cpp" />
     <ClCompile Include="Graphics\Vertex.cpp" />
     <ClCompile Include="Graphics\VertexBuffer.cpp" />
+    <ClCompile Include="Input\InputSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\App.h" />
@@ -59,6 +65,7 @@
     <ClInclude Include="Graphics\UniformBuffer.h" />
     <ClInclude Include="Graphics\Vertex.h" />
     <ClInclude Include="Graphics\VertexBuffer.h" />
+    <ClInclude Include="Input\InputSystem.h" />
     <ClInclude Include="Math\EulerAngles.h" />
     <ClInclude Include="Math\MathCommon.h" />
     <ClInclude Include="Math\MathFwd.h" />
@@ -82,26 +89,26 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -152,7 +159,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>.\;..\..\ThirdParty\glfw-3.4.bin.WIN64\include;..\..\ThirdParty\VulkanSDK\1.4.309.0\Include;..\..\ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -162,11 +169,14 @@
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y /F /I "$(TargetPath)" "$(SolutionDir)Run"</Command>
+      <Command>xcopy /Y /F /I "$(TargetPath)" "$(SolutionDir)Temporary"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Copying $(TargetFileName) to $(SolutionDir)Run...</Message>
     </PostBuildEvent>
+    <Lib>
+      <AdditionalLibraryDirectories>$(SolutionDir)Temporary\$(ProjectName)_$(PlatformShortName)_$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -177,7 +187,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>.\;..\..\ThirdParty\glfw-3.4.bin.WIN64\include;..\..\ThirdParty\VulkanSDK\1.4.309.0\Include;..\..\ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -189,11 +199,14 @@
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y /F /I "$(TargetPath)" "$(SolutionDir)Run"</Command>
+      <Command>xcopy /Y /F /I "$(TargetPath)" "$(SolutionDir)Temporary"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Copying $(TargetFileName) to $(SolutionDir)Run...</Message>
     </PostBuildEvent>
+    <Lib>
+      <AdditionalLibraryDirectories>$(SolutionDir)Temporary\$(ProjectName)_$(PlatformShortName)_$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -202,7 +215,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>.\;..\..\ThirdParty\glfw-3.4.bin.WIN64\include;..\..\ThirdParty\VulkanSDK\1.4.309.0\Include;..\..\ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -212,11 +225,14 @@
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y /F /I "$(TargetPath)" "$(SolutionDir)Run"</Command>
+      <Command>xcopy /Y /F /I "$(TargetPath)" "$(SolutionDir)Temporary"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Copying $(TargetFileName) to $(SolutionDir)Run...</Message>
     </PostBuildEvent>
+    <Lib>
+      <AdditionalLibraryDirectories>$(SolutionDir)Temporary\$(ProjectName)_$(PlatformShortName)_$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -227,7 +243,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>.\;..\..\ThirdParty\glfw-3.4.bin.WIN64\include;..\..\ThirdParty\VulkanSDK\1.4.309.0\Include;..\..\ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -239,11 +255,14 @@
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y /F /I "$(TargetPath)" "$(SolutionDir)Run"</Command>
+      <Command>xcopy /Y /F /I "$(TargetPath)" "$(SolutionDir)Temporary"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Copying $(TargetFileName) to $(SolutionDir)Run...</Message>
     </PostBuildEvent>
+    <Lib>
+      <AdditionalLibraryDirectories>$(SolutionDir)Temporary\$(ProjectName)_$(PlatformShortName)_$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

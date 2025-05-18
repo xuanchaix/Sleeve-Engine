@@ -12,7 +12,7 @@
 
 PerspectiveCamera* globalCamera = nullptr;
 
-void Renderer::InitVulkan()
+void Renderer::Initialize()
 {
 	CreateInstance();
 	SetupDebugMessenger();
@@ -359,16 +359,50 @@ void Renderer::PickPhysicalDevice()
 	std::vector<VkPhysicalDevice> devices( deviceCount );
 	vkEnumeratePhysicalDevices( m_instance, &deviceCount, devices.data() );
 
-	for (const auto& device : devices) {
-		if (IsDeviceSuitable( device )) {
-			m_physicalDevice = device;
-			break;
+	// only one graphics card
+	if (devices.size() == 1) {
+		if (IsDeviceSuitable( devices[0] )) {
+			m_physicalDevice = devices[0];
+		}
+
+		if (m_physicalDevice == VK_NULL_HANDLE) {
+			throw std::runtime_error( "failed to find a suitable GPU!" );
+		}
+	}
+	else { // multiple graphics card
+		// first check requirements
+		std::vector<VkPhysicalDevice> suitableDevice;
+		for (const auto& device : devices) {
+			if (IsDeviceSuitable( device )) {
+				suitableDevice.push_back( device );
+			}
+		}
+
+		if (suitableDevice.empty()) {
+			throw std::runtime_error( "failed to find a suitable GPU!" );
+		}
+
+		// then give score to each graphics card
+		float maxScore = 0.f;
+		for (auto const& device : devices) {
+			float score = 0.f;
+			VkPhysicalDeviceProperties properties;
+			vkGetPhysicalDeviceProperties( device, &properties );
+			if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+				score += 10.f;
+			}
+
+			if (score > maxScore) {
+				maxScore = score;
+				m_physicalDevice = device;
+			}
+		}
+
+		if (m_physicalDevice == VK_NULL_HANDLE) {
+			throw std::runtime_error( "failed to find a suitable GPU!" );
 		}
 	}
 
-	if (m_physicalDevice == VK_NULL_HANDLE) {
-		throw std::runtime_error( "failed to find a suitable GPU!" );
-	}
 }
 
 void Renderer::CreateLogicalDevice()
@@ -388,11 +422,9 @@ void Renderer::CreateLogicalDevice()
 		queueCreateInfos.push_back( queueCreateInfo );
 	}
 
-	uint32_t transferQueueFamily = GetTransferQueueFamily();
-
 	VkDeviceQueueCreateInfo queueCreateInfo{};
 	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-	queueCreateInfo.queueFamilyIndex = transferQueueFamily;
+	queueCreateInfo.queueFamilyIndex = indices.m_transferFamily.value();
 	queueCreateInfo.queueCount = 1;
 	queueCreateInfo.pQueuePriorities = &queuePriority;
 	queueCreateInfos.push_back( queueCreateInfo );
@@ -413,7 +445,7 @@ void Renderer::CreateLogicalDevice()
 
 	vkGetDeviceQueue( m_device, indices.m_graphicsFamily.value(), 0, &m_graphicsQueue );
 	vkGetDeviceQueue( m_device, indices.m_presentFamily.value(), 0, &m_presentQueue );
-	vkGetDeviceQueue( m_device, transferQueueFamily, 0, &m_transferQueue );
+	vkGetDeviceQueue( m_device, indices.m_transferFamily.value(), 0, &m_transferQueue );
 }
 
 void Renderer::CreateSwapChain()
@@ -577,7 +609,7 @@ void Renderer::CreateCommandPools()
 
 	VkCommandPoolCreateInfo transferPoolInfo{};
 	transferPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	transferPoolInfo.queueFamilyIndex = GetTransferQueueFamily();
+	transferPoolInfo.queueFamilyIndex = queueFamilyIndices.m_transferFamily.value();
 	transferPoolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
 
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
@@ -1401,13 +1433,22 @@ QueueFamilyIndices Renderer::FindQueueFamilies( VkPhysicalDevice device )
 
 	int i = 0;
 	for (const auto& queueFamily : queueFamilies) {
+		bool foundOne = false;
 		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
 			indices.m_graphicsFamily = i;
+			foundOne = true;
 		}
 		VkBool32 presentSupport = false;
 		vkGetPhysicalDeviceSurfaceSupportKHR( device, i, m_surface, &presentSupport );
-		if (presentSupport) {
+		if (presentSupport && !foundOne) {
 			indices.m_presentFamily = i;
+			foundOne = true;
+		}
+
+		if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT &&
+			!(queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) && !foundOne) {
+			indices.m_transferFamily = i;
+			foundOne = true;
 		}
 
 		if (indices.isComplete()) {
@@ -1416,6 +1457,26 @@ QueueFamilyIndices Renderer::FindQueueFamilies( VkPhysicalDevice device )
 		i++;
 	}
 
+	if (!indices.m_presentFamily.has_value()) {
+		for (int i = 0; i < queueFamilies.size(); ++i) {
+			VkBool32 presentSupport = false;
+			vkGetPhysicalDeviceSurfaceSupportKHR( device, i, m_surface, &presentSupport );
+			if (presentSupport) {
+				indices.m_presentFamily = i;
+				break;
+			}
+		}
+	}
+
+	// Fallback to a graphics-capable queue if no dedicated transfer queue exists
+	if (!indices.m_transferFamily.has_value()) {
+		for (int i = 0; i < queueFamilies.size(); ++i) {
+			if (queueFamilies[i].queueFlags & VK_QUEUE_TRANSFER_BIT) {
+				indices.m_transferFamily = i;
+				break;
+			}
+		}
+	}
 
 	return indices;
 }

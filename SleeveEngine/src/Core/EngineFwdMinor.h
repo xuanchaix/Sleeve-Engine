@@ -9,5 +9,6 @@ struct GLFWwindow;
 #include "Core/ResourceManager.h"
 #include "Core/Time.h"
 #include "Core/Clock.h"
+#include "Input/InputSystem.h"
 #include "Math/MathFwd.h"
 #include "Graphics/GraphicsFwdMinor.h"

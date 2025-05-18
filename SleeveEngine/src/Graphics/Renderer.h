@@ -27,9 +27,10 @@ const std::vector<const char*> deviceExtensions = {
 struct QueueFamilyIndices {
 	std::optional<uint32_t> m_graphicsFamily;
 	std::optional<uint32_t> m_presentFamily;
+	std::optional<uint32_t> m_transferFamily;
 
 	bool isComplete() {
-		return m_graphicsFamily.has_value() && m_presentFamily.has_value();
+		return m_graphicsFamily.has_value() && m_presentFamily.has_value() && m_transferFamily.has_value();
 	}
 };
 
@@ -49,7 +50,7 @@ class Renderer {
 	friend class Shader;
 	friend class DescriptorPools;
 public:
-	void InitVulkan();
+	void Initialize();
 	void Cleanup();
 	void WaitForCleanup();
 	void BeginFrame();

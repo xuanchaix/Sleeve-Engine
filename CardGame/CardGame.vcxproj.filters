@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Frameworks">
+      <UniqueIdentifier>{c8d1b73b-e088-4758-baf4-0c7e59d30d56}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Frameworks\main.cpp">
+      <Filter>Frameworks</Filter>
+    </ClCompile>
+    <ClCompile Include="Frameworks\GameCommon.cpp">
+      <Filter>Frameworks</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Frameworks\GameCommon.h">
+      <Filter>Frameworks</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

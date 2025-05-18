@@ -13,6 +13,9 @@
     <Filter Include="Entity">
       <UniqueIdentifier>{0aa332af-6bc6-447f-96eb-9e59e7d5cdfa}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Input">
+      <UniqueIdentifier>{e1bc2e54-17d9-4328-86b2-2e3006f01d2f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\main.cpp">
@@ -65,6 +68,9 @@
     </ClCompile>
     <ClCompile Include="Core\Clock.cpp">
       <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Input\InputSystem.cpp">
+      <Filter>Input</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -157,6 +163,9 @@
     </ClInclude>
     <ClInclude Include="Core\Clock.h">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Input\InputSystem.h">
+      <Filter>Input</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

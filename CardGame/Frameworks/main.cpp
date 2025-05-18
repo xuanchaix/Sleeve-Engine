@@ -5,7 +5,9 @@
 #include <stdexcept>
 #include <cstdlib>
 
-int main() {
+
+int main( int argc, char* argv[] )
+{
 	g_theApp = new App();
 
 	try {
