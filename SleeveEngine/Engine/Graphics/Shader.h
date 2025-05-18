@@ -5,12 +5,12 @@
 
 class Renderer;
 class DescriptorPools;
-struct EntityUniformBuffers;
+struct Legacy_EntityUniformBuffers;
 struct UniformBufferBinding;
 
 class Shader {
 public:
-	void UpdateDescriptorSets( EntityUniformBuffers const& uniformBuffers );
+	void UpdateDescriptorSets( Legacy_EntityUniformBuffers const& uniformBuffers );
 	void UpdateDescriptorSets( UniformBufferBinding const& binding );
 
 protected:

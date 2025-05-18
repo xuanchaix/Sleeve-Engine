@@ -16,11 +16,11 @@
     <Filter Include="Input">
       <UniqueIdentifier>{e1bc2e54-17d9-4328-86b2-2e3006f01d2f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Window">
+      <UniqueIdentifier>{03ad6e58-23dc-467a-92f7-b85478205a00}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Core\main.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
     <ClCompile Include="Graphics\Camera.cpp">
       <Filter>Graphics</Filter>
     </ClCompile>
@@ -41,9 +41,6 @@
     </ClCompile>
     <ClCompile Include="Graphics\Renderer.cpp">
       <Filter>Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\App.cpp">
-      <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="Core\EngineCommon.cpp">
       <Filter>Core</Filter>
@@ -71,6 +68,9 @@
     </ClCompile>
     <ClCompile Include="Input\InputSystem.cpp">
       <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Window\Window.cpp">
+      <Filter>Window</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -125,9 +125,6 @@
     <ClInclude Include="Graphics\Renderer.h">
       <Filter>Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="Core\App.h">
-      <Filter>Core</Filter>
-    </ClInclude>
     <ClInclude Include="Core\EngineCommon.h">
       <Filter>Core</Filter>
     </ClInclude>
@@ -166,6 +163,9 @@
     </ClInclude>
     <ClInclude Include="Input\InputSystem.h">
       <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Window\Window.h">
+      <Filter>Window</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

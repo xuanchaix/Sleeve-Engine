@@ -56,15 +56,17 @@ public:
 	void BeginFrame();
 	void EndFrame();
 
-	void BeginCamera( PerspectiveCamera const& camera );
-	void EndCamera( PerspectiveCamera const& camera );
+	void BeginCamera( Camera const* camera );
+	void EndCamera( Camera const* camera );
+
+	float GetSwapChainExtentRatio() const;
 
 	void DrawSingleBufferIndexed( VertexBuffer* vertexBuffer, IndexBuffer* indexBuffer, uint64_t vertexOffset = 0, uint64_t indexOffset = 0 );
 	void Draw( VertexBufferBinding const& vertexBinding );
 	void DrawIndexed( VertexBufferBinding const& vertexBinding, IndexBufferBinding const& indexBinding );
 
 	void BindShader( Shader* shader );
-	void BeginDrawCommands( EntityUniformBuffers const& uniformBuffers );
+	void BeginDrawCommands( Legacy_EntityUniformBuffers const& uniformBuffers );
 	void BeginDrawCommands( UniformBufferBinding const& binding );
 
 	void UpdateUniformBuffer( UniformBuffer* uniformBuffer, void* newData, size_t dataSize );
@@ -82,6 +84,7 @@ public:
 	IndexBufferBinding AddIndicesDataToSharedIndexBuffer( void* indexData, uint64_t size, uint32_t indexCount );
 	UniformBufferBinding AddDataToSharedUniformBuffer( UniformBufferDataBindingFlags flags );
 	void ReturnMemoryToSharedBuffer( VertexBufferBinding const& vBinding, IndexBufferBinding const& iBinding, UniformBufferBinding const& uBinding );
+
 protected:
 	void DeferredDestroyBuffer( UniformBuffer* buffer );
 	void DeferredDestroyBuffer( VertexBuffer* buffer );
@@ -211,6 +214,8 @@ protected:
 	std::vector<VkCommandPool> m_transferCommandPools;
 	std::vector<VkCommandBuffer> m_transferCommandBuffers;
 
+	Camera const* m_currentCamera = nullptr;
+
 	std::vector<VkCommandBuffer> m_commandBuffers;
 	std::vector<VkSemaphore> m_imageAvailableSemaphores;
 	std::vector<VkSemaphore> m_renderFinishedSemaphores;
@@ -230,4 +235,5 @@ protected:
 	std::vector<BufferCopyCommand> m_copyCommands;
 	std::vector<BufferPendingToDestroy> m_pendingDestroyBuffers;
 	std::vector<StagingBuffer*> m_stagingBuffers;
+
 };

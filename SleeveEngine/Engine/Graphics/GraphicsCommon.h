@@ -7,7 +7,7 @@ class IndexBuffer;
 class UniformBuffer;
 class StagingBuffer;
 
-struct EntityUniformBuffers {
+struct Legacy_EntityUniformBuffers {
 	std::vector<UniformBuffer*> m_uniformBuffersModel;
 };
 

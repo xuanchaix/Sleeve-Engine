@@ -12,9 +12,21 @@
     <ClCompile Include="Frameworks\GameCommon.cpp">
       <Filter>Frameworks</Filter>
     </ClCompile>
+    <ClCompile Include="Frameworks\App.cpp">
+      <Filter>Frameworks</Filter>
+    </ClCompile>
+    <ClCompile Include="Frameworks\Game.cpp">
+      <Filter>Frameworks</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Frameworks\GameCommon.h">
+      <Filter>Frameworks</Filter>
+    </ClInclude>
+    <ClInclude Include="Frameworks\App.h">
+      <Filter>Frameworks</Filter>
+    </ClInclude>
+    <ClInclude Include="Frameworks\Game.h">
       <Filter>Frameworks</Filter>
     </ClInclude>
   </ItemGroup>

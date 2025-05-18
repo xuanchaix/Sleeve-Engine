@@ -8,15 +8,14 @@
 
 #include "Graphics/GraphicsCommon.h"
 #include "Graphics/Renderer.h"
-extern PerspectiveCamera* globalCamera;
 
-void Shader::UpdateDescriptorSets( EntityUniformBuffers const& uniformBuffers )
+void Shader::UpdateDescriptorSets( Legacy_EntityUniformBuffers const& uniformBuffers )
 {
 	// Get a descriptor set, all acquired sets will be freed next frame
 	VkDescriptorSet set = m_pools->AcquireDescriptorSet( m_descriptorSetLayout );
 
 	VkDescriptorBufferInfo vpBufferInfo{};
-	vpBufferInfo.buffer = globalCamera->m_cameraUniformBuffers[m_renderer->GetCurFrameNumber()]->m_buffer;
+	vpBufferInfo.buffer = g_theRenderer->m_currentCamera->m_cameraUniformBuffers[m_renderer->GetCurFrameNumber()]->m_buffer;
 	vpBufferInfo.offset = 0;
 	vpBufferInfo.range = sizeof( CameraUniformBufferObject );
 
@@ -68,7 +67,7 @@ void Shader::UpdateDescriptorSets( UniformBufferBinding const& binding )
 	VkDescriptorSet set = m_pools->AcquireDescriptorSet( m_descriptorSetLayout );
 
 	VkDescriptorBufferInfo vpBufferInfo{};
-	vpBufferInfo.buffer = globalCamera->m_cameraUniformBuffers[m_renderer->GetCurFrameNumber()]->m_buffer;
+	vpBufferInfo.buffer = g_theRenderer->m_currentCamera->m_cameraUniformBuffers[m_renderer->GetCurFrameNumber()]->m_buffer;
 	vpBufferInfo.offset = 0;
 	vpBufferInfo.range = sizeof( CameraUniformBufferObject );
 

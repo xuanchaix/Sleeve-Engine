@@ -19,15 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Core\App.cpp" />
     <ClCompile Include="Core\Clock.cpp" />
     <ClCompile Include="Core\EngineCommon.cpp" />
-    <ClCompile Include="Core\main.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="Core\ResourceManager.cpp" />
     <ClCompile Include="Core\Time.cpp" />
     <ClCompile Include="Entity\Entity.cpp" />
@@ -42,9 +35,9 @@
     <ClCompile Include="Graphics\Vertex.cpp" />
     <ClCompile Include="Graphics\VertexBuffer.cpp" />
     <ClCompile Include="Input\InputSystem.cpp" />
+    <ClCompile Include="Window\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Core\App.h" />
     <ClInclude Include="Core\Clock.h" />
     <ClInclude Include="Core\Color.h" />
     <ClInclude Include="Core\EngineCommon.h" />
@@ -75,6 +68,7 @@
     <ClInclude Include="Math\Vec2.h" />
     <ClInclude Include="Math\Vec3.h" />
     <ClInclude Include="Math\Vec4.h" />
+    <ClInclude Include="Window\Window.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Math\MathUtils.inl" />

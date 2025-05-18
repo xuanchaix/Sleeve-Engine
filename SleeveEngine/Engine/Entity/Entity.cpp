@@ -3,8 +3,6 @@
 #include <vector>
 #include <chrono>
 
-extern PerspectiveCamera globalCamera;
-
 const std::vector<VertexPCU3D> vertices = {
 	{Vec3{-0.5f, -0.5f, 0.0f}, Rgba8{255, 255, 255, 255}, Vec2{0.0f, 0.0f}},
 	{Vec3{0.5f, -0.5f, 0.0f}, Rgba8{255, 255, 255, 255}, Vec2{1.0f, 0.0f}},

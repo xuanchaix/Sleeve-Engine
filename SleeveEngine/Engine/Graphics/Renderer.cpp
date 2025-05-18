@@ -7,10 +7,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include "Core/App.h"
 #include "Graphics/StagingBuffer.h"
-
-PerspectiveCamera* globalCamera = nullptr;
+#include "Window/Window.h"
 
 void Renderer::Initialize()
 {
@@ -36,12 +34,6 @@ void Renderer::Initialize()
 		m_sharedModelUniformBuffers[i] = CreateSharedUniformBuffer( INITIAL_MODEL_UNIFORM_BUFFER_MAX_SIZE, sizeof(ModelUniformBufferObject) );
 	}
 
-	globalCamera->m_aspect = m_swapChainExtent.width / (float)m_swapChainExtent.height;
-	globalCamera->m_fov = 60.f;
-	globalCamera->m_zNear = 0.1f;
-	globalCamera->m_zFar = 100.f;
-	globalCamera->m_position = Vec3( 0.f, -1.f, 1.73f );
-	globalCamera->m_orientation = Euler( 90.f, 60.f, 0.f );
 }
 
 void Renderer::Cleanup()
@@ -236,8 +228,8 @@ void Renderer::EndFrame()
 	presentInfo.pResults = nullptr; // Optional
 	VkResult result = vkQueuePresentKHR( m_presentQueue, &presentInfo );
 
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || g_theApp->HasFrameBufferResized()) {
-		g_theApp->SetFrameBufferResized( false );
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || g_window->HasFrameBufferResized()) {
+		g_window->SetFrameBufferResized( false );
 		RecreateSwapChain();
 	}
 	else if (result != VK_SUCCESS) {
@@ -259,17 +251,23 @@ void Renderer::EndFrame()
 	m_currentFrame = (m_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void Renderer::BeginCamera( PerspectiveCamera const& camera )
+void Renderer::BeginCamera( Camera const* camera )
 {
 	CameraUniformBufferObject cubo;
-	cubo.m_projectionMatrix = camera.GetPerspectiveProjectionMatrix();
-	cubo.m_viewMatrix = camera.GetViewMatrix();
-	UpdateUniformBuffer( camera.m_cameraUniformBuffers[GetCurFrameNumber()], (void*)&cubo, sizeof(cubo));
+	cubo.m_projectionMatrix = camera->GetPerspectiveProjectionMatrix();
+	cubo.m_viewMatrix = camera->GetViewMatrix();
+	UpdateUniformBuffer( camera->m_cameraUniformBuffers[GetCurFrameNumber()], (void*)&cubo, sizeof(cubo));
+	m_currentCamera = camera;
 }
 
-void Renderer::EndCamera( PerspectiveCamera const& camera )
+void Renderer::EndCamera( Camera const* camera )
 {
 
+}
+
+float Renderer::GetSwapChainExtentRatio() const
+{
+	return m_swapChainExtent.width / (float)m_swapChainExtent.height;
 }
 
 void Renderer::DeferredDestroyBuffer( UniformBuffer* buffer )
@@ -344,7 +342,7 @@ void Renderer::SetupDebugMessenger()
 
 void Renderer::CreateSurface()
 {
-	if (glfwCreateWindowSurface( m_instance, g_theApp->m_window, nullptr, &m_surface ) != VK_SUCCESS) {
+	if (glfwCreateWindowSurface( m_instance, g_window->GetGLFWWindow(), nullptr, &m_surface) != VK_SUCCESS) {
 		throw std::runtime_error( "failed to create window surface!" );
 	}
 }
@@ -864,7 +862,7 @@ void Renderer::BindShader( Shader* shader )
 	}
 }
 
-void Renderer::BeginDrawCommands( EntityUniformBuffers const& uniformBuffers )
+void Renderer::BeginDrawCommands( Legacy_EntityUniformBuffers const& uniformBuffers )
 {
 	m_currentShader->UpdateDescriptorSets( uniformBuffers );
 }
@@ -1224,7 +1222,7 @@ void Renderer::RecreateSwapChain()
 {
 	int width = 0, height = 0;
 	while (width == 0 || height == 0) {
-		glfwGetFramebufferSize( g_theApp->m_window, &width, &height );
+		glfwGetFramebufferSize( g_window->GetGLFWWindow(), &width, &height);
 		glfwWaitEvents();
 	}
 
@@ -1530,7 +1528,7 @@ VkExtent2D Renderer::ChooseSwapExtent( const VkSurfaceCapabilitiesKHR& capabilit
 	}
 	else {
 		int width, height;
-		glfwGetFramebufferSize( g_theApp->m_window, &width, &height );
+		glfwGetFramebufferSize( g_window->GetGLFWWindow(), &width, &height);
 
 		VkExtent2D actualExtent = {
 			static_cast<uint32_t>(width),

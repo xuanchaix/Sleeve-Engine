@@ -1,5 +1,6 @@
-#include "Core/App.h"
-#include "Core/EngineCommon.h"
+#include "CardGame/Frameworks/App.h"
+#include "Engine/Core/EngineCommon.h"
+#include "CardGame/Frameworks/GameCommon.h"
 
 #include <iostream>
 #include <stdexcept>
