@@ -1,11 +1,11 @@
-#include "CardGame/Frameworks/App.h"
+#include "Game/Frameworks/App.h"
 
 #include "Engine/Graphics/Renderer.h"
 #include "Engine/Window/Window.h"
 #include "Engine/Input/InputSystem.h"
 
-#include "CardGame/Frameworks/Game.h"
-#include "CardGame/Frameworks/GameCommon.h"
+#include "Game/Frameworks/Game.h"
+#include "Game/Frameworks/GameCommon.h"
 
 #include <chrono>
 #include <thread>

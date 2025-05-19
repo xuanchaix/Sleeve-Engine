@@ -1,5 +1,5 @@
 #pragma once
-#include "CardGame/Frameworks/GameCommon.h"
+#include "Game/Frameworks/GameCommon.h"
 
 class Game {
 public:

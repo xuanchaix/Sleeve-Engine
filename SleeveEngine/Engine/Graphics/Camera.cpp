@@ -36,7 +36,37 @@ Mat44 PerspectiveCamera::GetViewMatrix() const
 	return rotationMatrix;
 }
 
-Mat44 PerspectiveCamera::GetPerspectiveProjectionMatrix() const
+Mat44 PerspectiveCamera::GetProjectionMatrix() const
 {
 	return ::GetPerspectiveMatrix( m_fov, m_aspect, m_zNear, m_zFar );
+}
+
+OrthographicCamera::OrthographicCamera()
+{
+
+}
+
+OrthographicCamera::~OrthographicCamera()
+{
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+		delete m_cameraUniformBuffers[i];
+	}
+}
+
+void OrthographicCamera::BeginPlay()
+{
+	m_cameraUniformBuffers.reserve( MAX_FRAMES_IN_FLIGHT );
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+		m_cameraUniformBuffers.push_back( g_theRenderer->CreateUniformBuffer( sizeof( CameraUniformBufferObject ) ) );
+	}
+}
+
+Mat44 OrthographicCamera::GetViewMatrix() const
+{
+	return Mat44();
+}
+
+Mat44 OrthographicCamera::GetProjectionMatrix() const
+{
+	return Mat44();
 }

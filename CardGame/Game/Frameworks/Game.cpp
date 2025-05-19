@@ -1,5 +1,5 @@
-#include "CardGame/Frameworks/Game.h"
-#include "CardGame/Frameworks/GameCommon.h"
+#include "Game/Frameworks/Game.h"
+#include "Game/Frameworks/GameCommon.h"
 #include "Engine/Graphics/Renderer.h"
 #include "Engine/Window/Window.h"
 #include <vector>

@@ -19,15 +19,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Frameworks\App.cpp" />
-    <ClCompile Include="Frameworks\Game.cpp" />
-    <ClCompile Include="Frameworks\GameCommon.cpp" />
-    <ClCompile Include="Frameworks\main.cpp" />
+    <ClCompile Include="Game\Frameworks\App.cpp" />
+    <ClCompile Include="Game\Frameworks\Game.cpp" />
+    <ClCompile Include="Game\Frameworks\GameCommon.cpp" />
+    <ClCompile Include="Game\Frameworks\main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Frameworks\App.h" />
-    <ClInclude Include="Frameworks\Game.h" />
-    <ClInclude Include="Frameworks\GameCommon.h" />
+    <ClInclude Include="Game\Frameworks\App.h" />
+    <ClInclude Include="Game\Frameworks\Game.h" />
+    <ClInclude Include="Game\Frameworks\GameCommon.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -90,26 +90,26 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)Temporary\$(ProjectName)_$(PlatformShortName)_$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)Temporary\$(ProjectName)_$(PlatformShortName)_$(Configuration)\</IntDir>
+    <OutDir>Temporary\$(ProjectName)_$(PlatformShortName)_$(Configuration)\</OutDir>
+    <IntDir>Temporary\$(ProjectName)_$(PlatformShortName)_$(Configuration)\</IntDir>
     <TargetName>$(ProjectName)_$(Configuration)_$(PlatformShortName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)Temporary\$(ProjectName)_$(PlatformShortName)_$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)Temporary\$(ProjectName)_$(PlatformShortName)_$(Configuration)\</IntDir>
+    <OutDir>Temporary\$(ProjectName)_$(PlatformShortName)_$(Configuration)\</OutDir>
+    <IntDir>Temporary\$(ProjectName)_$(PlatformShortName)_$(Configuration)\</IntDir>
     <TargetName>$(ProjectName)_$(Configuration)_$(PlatformShortName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)Temporary\$(ProjectName)_$(PlatformShortName)_$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)Temporary\$(ProjectName)_$(PlatformShortName)_$(Configuration)\</IntDir>
+    <OutDir>Temporary\$(ProjectName)_$(PlatformShortName)_$(Configuration)\</OutDir>
+    <IntDir>Temporary\$(ProjectName)_$(PlatformShortName)_$(Configuration)\</IntDir>
     <TargetName>$(ProjectName)_$(Configuration)_$(PlatformShortName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)Temporary\$(ProjectName)_$(PlatformShortName)_$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)Temporary\$(ProjectName)_$(PlatformShortName)_$(Configuration)\</IntDir>
+    <OutDir>Temporary\$(ProjectName)_$(PlatformShortName)_$(Configuration)\</OutDir>
+    <IntDir>Temporary\$(ProjectName)_$(PlatformShortName)_$(Configuration)\</IntDir>
     <TargetName>$(ProjectName)_$(Configuration)_$(PlatformShortName)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -133,7 +133,7 @@
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;SleeveEngine_Debug_x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y /F /I "$(TargetPath)" "$(SolutionDir)Run"</Command>
+      <Command>xcopy /Y /F /I "$(TargetPath)" "$(SolutionDir)../CardGame/Run"</Command>
       <Message>Copying $(TargetFileName) to $(SolutionDir)Run...</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -158,7 +158,7 @@
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;SleeveEngine_Debug_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y /F /I "$(TargetPath)" "$(SolutionDir)Run"</Command>
+      <Command>xcopy /Y /F /I "$(TargetPath)" "$(SolutionDir)../CardGame/Run"</Command>
       <Message>Copying $(TargetFileName) to $(SolutionDir)Run...</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -188,7 +188,7 @@
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;SleeveEngine_Release_x86.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y /F /I "$(TargetPath)" "$(SolutionDir)Run"</Command>
+      <Command>xcopy /Y /F /I "$(TargetPath)" "$(SolutionDir)../CardGame/Run"</Command>
       <Message>Copying $(TargetFileName) to $(SolutionDir)Run...</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -219,7 +219,7 @@
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;SleeveEngine_Release_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y /F /I "$(TargetPath)" "$(SolutionDir)Run"</Command>
+      <Command>xcopy /Y /F /I "$(TargetPath)" "$(SolutionDir)../CardGame/Run"</Command>
       <Message>Copying $(TargetFileName) to $(SolutionDir)Run...</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>

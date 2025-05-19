@@ -7,7 +7,7 @@ class UniformBuffer;
 struct Camera {
 	virtual void BeginPlay() = 0;
 	virtual Mat44 GetViewMatrix() const = 0;
-	virtual Mat44 GetPerspectiveProjectionMatrix() const = 0;
+	virtual Mat44 GetProjectionMatrix() const = 0;
 	std::vector<UniformBuffer*> m_cameraUniformBuffers;
 };
 
@@ -15,9 +15,11 @@ struct PerspectiveCamera : public Camera {
 	PerspectiveCamera();
 	~PerspectiveCamera();
 
-	void BeginPlay();
-	Mat44 GetViewMatrix() const;
-	Mat44 GetPerspectiveProjectionMatrix() const;
+	virtual void BeginPlay();
+	/// Get view matrix of the camera
+	virtual Mat44 GetViewMatrix() const;
+	/// Get perspective projection matrix of the camera
+	virtual Mat44 GetProjectionMatrix() const;
 
 	Euler m_orientation;
 	Vec3 m_position;
@@ -31,6 +33,12 @@ struct PerspectiveCamera : public Camera {
 struct OrthographicCamera : public Camera {
 	OrthographicCamera();
 	~OrthographicCamera();
+
+	virtual void BeginPlay();
+	/// Get view matrix of the camera
+	virtual Mat44 GetViewMatrix() const;
+	/// Get orthographic projection matrix of the camera
+	virtual Mat44 GetProjectionMatrix() const;
 
 	Vec2 m_xyPos = Vec2( 0.f, 0.f );
 	float m_near = 0.f;

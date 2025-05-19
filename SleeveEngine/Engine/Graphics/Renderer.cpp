@@ -254,7 +254,7 @@ void Renderer::EndFrame()
 void Renderer::BeginCamera( Camera const* camera )
 {
 	CameraUniformBufferObject cubo;
-	cubo.m_projectionMatrix = camera->GetPerspectiveProjectionMatrix();
+	cubo.m_projectionMatrix = camera->GetProjectionMatrix();
 	cubo.m_viewMatrix = camera->GetViewMatrix();
 	UpdateUniformBuffer( camera->m_cameraUniformBuffers[GetCurFrameNumber()], (void*)&cubo, sizeof(cubo));
 	m_currentCamera = camera;
