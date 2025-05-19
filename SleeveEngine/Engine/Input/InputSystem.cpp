@@ -1,6 +1,8 @@
 #include "Input/InputSystem.h"
 #include <GLFW/glfw3.h>
+#include "Window/Window.h"
 
+extern Window* g_mainWindow;
 extern InputSystem* g_theInput;
 
 InputSystem::InputSystem()
@@ -20,7 +22,18 @@ void InputSystem::Initialize()
 
 void InputSystem::BeginFrame()
 {
+	double xPos, yPos;
+	glfwGetCursorPos( g_mainWindow->GetGLFWWindow(), &xPos, &yPos );
+	Vec2 thisFramePos = Vec2( (float)xPos, (float)yPos );
 
+	if (glfwGetInputMode( g_mainWindow->GetGLFWWindow(), GLFW_CURSOR ) == GLFW_CURSOR_DISABLED) {
+		g_theInput->m_cursorPosDeltaOffset = thisFramePos - g_theInput->m_cursorPosThisFrame;
+		g_theInput->m_cursorPosDeltaOffset /= g_mainWindow->GetWindowSize();
+	}
+	else {
+		g_theInput->m_cursorPosDeltaOffset = Vec2();
+	}
+	m_cursorPosThisFrame = thisFramePos;
 }
 
 void InputSystem::EndFrame()
@@ -45,6 +58,11 @@ bool InputSystem::IsKeyDown( unsigned int keyCode ) const
 	return m_keyStates[keyCode].m_isDownThisFrame;
 }
 
+Vec2 InputSystem::GetCursorNormalizedOffset() const
+{
+	return m_cursorPosDeltaOffset;
+}
+
 void InputSystem::KeyCallback( GLFWwindow* window, int key, int scanCode, int action, int mods )
 {
 	if (action == GLFW_PRESS) {
@@ -67,10 +85,5 @@ void InputSystem::MouseButtonCallback( GLFWwindow* window, int button, int actio
 
 void InputSystem::CursorPositionCallback( GLFWwindow* window, double xpos, double ypos )
 {
-	Vec2 thisFramePos = Vec2( (float)xpos, (float)ypos );
-	if (glfwGetInputMode( window, GLFW_CURSOR ) == GLFW_CURSOR_DISABLED) {
-		g_theInput->m_cursorPosDeltaOffset = thisFramePos - g_theInput->m_cursorPosThisFrame;
-	}
-	g_theInput->m_cursorPosThisFrame = thisFramePos;
 }
 

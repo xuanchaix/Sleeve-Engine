@@ -91,6 +91,7 @@ public:
 	void		operator-=( Vector2 const& vecToSubtract );
 	void		operator*=( T uniformScale );
 	void		operator/=( T uniformDivisor );
+	void		operator/=(  Vector2 const& vecToDivide );
 	void		operator=( Vector2 const& copyFrom );
 	//void		operator=( Vector3 const& copyFrom );
 
@@ -193,6 +194,13 @@ template<FloatingPointType T>
 bool Vector2<T>::operator==( Vector2 const& compare ) const
 {
 	return x == compare.x && y == compare.y;
+}
+
+template<FloatingPointType T>
+void Vector2<T>::operator/=( Vector2 const& vecToDivide )
+{
+	x /= vecToDivide.x;
+	y /= vecToDivide.y;
 }
 
 template<FloatingPointType T>

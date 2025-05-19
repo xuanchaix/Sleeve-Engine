@@ -12,5 +12,5 @@ extern Renderer* g_theRenderer;
 extern App* g_theApp;
 extern ResourceManager* g_theResourceManager;
 extern InputSystem* g_theInput;
-extern Window* g_window;
+extern Window* g_mainWindow;
 extern float TARGET_FRAME_TIME_MILLISECONDS;

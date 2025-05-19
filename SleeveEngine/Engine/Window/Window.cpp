@@ -19,7 +19,11 @@ void Window::InitWindow()
 	glfwSetKeyCallback( m_window, InputSystem::KeyCallback );
 	glfwSetCursorPosCallback( m_window, InputSystem::CursorPositionCallback );
 	glfwSetMouseButtonCallback( m_window, InputSystem::MouseButtonCallback );
-	//glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetInputMode( m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED );
+
+	int width, height;
+	glfwGetWindowSize( m_window, &width, &height );
+	m_windowSize = Vec2( (float)width, (float)height );
 }
 
 bool Window::IsQuitting() const
@@ -27,7 +31,7 @@ bool Window::IsQuitting() const
 	return glfwWindowShouldClose( m_window );
 }
 
-void Window::PollEvents()
+void Window::BeginFrame()
 {
 	glfwPollEvents();
 }
@@ -36,9 +40,16 @@ void Window::FramebufferResizeCallback( GLFWwindow* window, int width, int heigh
 {
 	auto myWindow = reinterpret_cast<Window*>(glfwGetWindowUserPointer( window ));
 	myWindow->m_framebufferResized = true;
+	glfwGetWindowSize( window, &width, &height );
+	myWindow->m_windowSize = Vec2( (float)width, (float)height );
 }
 
 GLFWwindow* Window::GetGLFWWindow() const
 {
 	return m_window;
+}
+
+Vec2 Window::GetWindowSize() const
+{
+	return m_windowSize;
 }

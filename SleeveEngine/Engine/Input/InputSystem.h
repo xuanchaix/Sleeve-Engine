@@ -122,6 +122,7 @@ public:
 	bool WasKeyJustPressed( unsigned int keyCode ) const;
 	bool WasKeyJustReleased( unsigned int keyCode ) const;
 	bool IsKeyDown( unsigned int keyCode ) const;
+	Vec2 GetCursorNormalizedOffset() const;
 
 	static void KeyCallback( GLFWwindow* window, int key, int scanCode, int action, int mods );
 	static void MouseButtonCallback( GLFWwindow* window, int button, int action, int mods );

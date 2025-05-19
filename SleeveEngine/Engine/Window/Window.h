@@ -6,9 +6,10 @@ public:
 	~Window();
 	void InitWindow();
 	bool IsQuitting() const;
-	void PollEvents();
+	void BeginFrame();
 	static void FramebufferResizeCallback( GLFWwindow* window, int width, int height );
 	GLFWwindow* GetGLFWWindow() const;
+	Vec2 GetWindowSize() const;
 
 	inline bool HasFrameBufferResized() const;
 	inline void SetFrameBufferResized( bool isResized );
@@ -16,6 +17,7 @@ public:
 protected:
 	GLFWwindow* m_window;
 	bool m_framebufferResized = false;
+	Vec2 m_windowSize;
 };
 
 bool Window::HasFrameBufferResized() const

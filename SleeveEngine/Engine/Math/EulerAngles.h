@@ -15,8 +15,12 @@ struct EulerAngles {
 	Mat4<T> GetMatrixInversed() const;
 	/// Get the forward vector
 	Vector3<T> GetForwardVector() const;
-};
+	/// Get the forward and left vector
+	void GetForwardAndLeftVector( Vector3<T>& forward, Vector3<T>& left ) const;
+	/// Get the forward, left and up vector
+	void GetForwardAndLeftAndUpVector( Vector3<T>& forward, Vector3<T>& left, Vector3<T>& up ) const;
 
+};
 
 template<FloatingPointType T>
 Vector3<T> EulerAngles<T>::GetForwardVector() const
@@ -31,6 +35,48 @@ Vector3<T> EulerAngles<T>::GetForwardVector() const
 	retVec.y = sy * cp;
 	retVec.z = -sp;
 	return retVec;
+}
+
+template<FloatingPointType T>
+void EulerAngles<T>::GetForwardAndLeftVector( Vector3<T>& forward, Vector3<T>& left ) const
+{
+	float sy = SinDegrees( yaw );
+	float cy = CosDegrees( yaw );
+	float sp = SinDegrees( pitch );
+	float cp = CosDegrees( pitch );
+	float sr = SinDegrees( roll );
+	float cr = CosDegrees( roll );
+
+	forward.x = cy * cp;
+	forward.y = sy * cp;
+	forward.z = -sp;
+
+	left.x = -sy * cr + cy * sp * sr;
+	left.y = cy * cr + sr * sy * sp;
+	left.z = cp * sr;
+}
+
+template<FloatingPointType T>
+void EulerAngles<T>::GetForwardAndLeftAndUpVector( Vector3<T>& forward, Vector3<T>& left, Vector3<T>& up ) const
+{
+	float sy = SinDegrees( yaw );
+	float cy = CosDegrees( yaw );
+	float sp = SinDegrees( pitch );
+	float cp = CosDegrees( pitch );
+	float sr = SinDegrees( roll );
+	float cr = CosDegrees( roll );
+
+	forward.x = cy * cp;
+	forward.y = sy * cp;
+	forward.z = -sp;
+
+	left.x = -sy * cr + cy * sp * sr;
+	left.y = cy * cr + sr * sy * sp;
+	left.z = cp * sr;
+
+	up.x = sr * sy + cy * sp * cr;
+	up.y = -cy * sr + cr * sy * sp;
+	up.z = cp * cr;
 }
 
 template<FloatingPointType T>

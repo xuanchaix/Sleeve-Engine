@@ -12,8 +12,8 @@
 
 void App::Initialize()
 {
-	g_window = new Window();
-	g_window->InitWindow();
+	g_mainWindow = new Window();
+	g_mainWindow->InitWindow();
 	g_theResourceManager = new ResourceManager();
 
 	g_theInput = new InputSystem();
@@ -28,10 +28,9 @@ void App::Initialize()
 
 void App::Run()
 {
-	while (!g_window->IsQuitting()) {
+	while (!AppShouldQuit()) {
 		auto startTime = std::chrono::high_resolution_clock::now();
 
-		g_window->PollEvents();
 		BeginFrame();
 		RunFrame();
 		EndFrame();
@@ -44,7 +43,11 @@ void App::Run()
 			currentTime = std::chrono::high_resolution_clock::now();
 			frameTime = std::chrono::duration<float, std::chrono::milliseconds::period>( currentTime - startTime ).count();
 		}
-		//printf( "FPS: %.3f\n", 1000.f / frameTime );
+		printf( "FPS: %.3f\n", 1000.f / frameTime );
+
+		if (g_theInput->WasKeyJustPressed( ENGINE_KEY_ESCAPE )) {
+			m_shouldQuit = true;
+		}
 	}
 }
 
@@ -56,13 +59,14 @@ void App::Exit()
 	g_theRenderer->Cleanup();
 	delete g_theRenderer;
 	delete g_theInput;
-	delete g_window;
+	delete g_mainWindow;
 
 }
 
 void App::BeginFrame()
 {
 	Clock::TickSystemClock();
+	g_mainWindow->BeginFrame();
 	g_theInput->BeginFrame();
 	g_theRenderer->BeginFrame();
 }
@@ -77,6 +81,11 @@ void App::EndFrame()
 {
 	g_theInput->BeginFrame();
 	g_theRenderer->EndFrame();
+}
+
+bool App::AppShouldQuit() const
+{
+	return g_mainWindow->IsQuitting() || m_shouldQuit;
 }
 
 void App::SetMaxFrameRate( int maxFrameRate )

@@ -39,7 +39,7 @@ void Entity3D::BeginPlay()
 
 void Entity3D::Update( float deltaSeconds )
 {
-	m_orientation.yaw += deltaSeconds * 90.0f;
+	//m_orientation.yaw += deltaSeconds * 90.0f;
 	CalculateModelMatrix( m_modelMatrix );
 }
 
