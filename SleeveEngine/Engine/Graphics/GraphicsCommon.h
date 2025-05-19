@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "Math/MathFwd.h"
+#include "Core/Error.h"
 
 class VertexBuffer;
 class IndexBuffer;

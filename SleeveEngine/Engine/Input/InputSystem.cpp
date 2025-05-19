@@ -26,9 +26,15 @@ void InputSystem::BeginFrame()
 	glfwGetCursorPos( g_mainWindow->GetGLFWWindow(), &xPos, &yPos );
 	Vec2 thisFramePos = Vec2( (float)xPos, (float)yPos );
 
-	if (glfwGetInputMode( g_mainWindow->GetGLFWWindow(), GLFW_CURSOR ) == GLFW_CURSOR_DISABLED) {
-		g_theInput->m_cursorPosDeltaOffset = thisFramePos - g_theInput->m_cursorPosThisFrame;
-		g_theInput->m_cursorPosDeltaOffset /= g_mainWindow->GetWindowSize();
+	if (g_mainWindow->GetCursorInputMode() == CursorInputMode::OFFSET) {
+		if (m_skipCursorDeltaOffsetThisFrame) {
+			m_skipCursorDeltaOffsetThisFrame = false;
+			g_theInput->m_cursorPosDeltaOffset = Vec2();
+		}
+		else {
+			g_theInput->m_cursorPosDeltaOffset = thisFramePos - g_theInput->m_cursorPosThisFrame;
+			g_theInput->m_cursorPosDeltaOffset /= g_mainWindow->GetWindowSize();
+		}
 	}
 	else {
 		g_theInput->m_cursorPosDeltaOffset = Vec2();
@@ -83,7 +89,4 @@ void InputSystem::MouseButtonCallback( GLFWwindow* window, int button, int actio
 	}
 }
 
-void InputSystem::CursorPositionCallback( GLFWwindow* window, double xpos, double ypos )
-{
-}
 

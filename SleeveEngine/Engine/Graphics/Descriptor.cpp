@@ -50,9 +50,8 @@ void DescriptorPools::CreateNewDescriptorPool()
 	poolInfo.poolSizeCount = static_cast<uint32_t>(m_poolSizes.size());
 	poolInfo.pPoolSizes = m_poolSizes.data();
 	poolInfo.maxSets = MAX_DESCRIPTOR_IN_POOL;
-	if (vkCreateDescriptorPool( m_device, &poolInfo, nullptr, &newPool ) != VK_SUCCESS) {
-		throw std::runtime_error( "failed to create descriptor pool!" );
-	}
+	ASSERT_OR_ERROR( vkCreateDescriptorPool( m_device, &poolInfo, nullptr, &newPool ) == VK_SUCCESS, "failed to create descriptor pool!" );
+
 	m_pools[g_theRenderer->m_currentFrame].push_back( newPool );
 }
 

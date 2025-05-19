@@ -4,7 +4,7 @@
 #include "Math/Vec4.h"
 
 template<FloatingPointType T>
-T GetClamped( T value, T minValue, T maxValue )
+T GetClamped( T value, T minValue, T maxValue ) noexcept
 {
 	if (value <= minValue) {
 		return minValue;

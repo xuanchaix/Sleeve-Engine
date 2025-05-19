@@ -9,17 +9,10 @@
 
 int main( int argc, char* argv[] )
 {
-	g_theApp = new App();
+	g_theApp = new App;
+	g_theApp->Initialize();
+	g_theApp->Run();
+	g_theApp->Exit();
 
-	try {
-		g_theApp->Initialize();
-		g_theApp->Run();
-		g_theApp->Exit();
-	}
-	catch (const std::exception& e) {
-		std::cerr << e.what() << '\n';
-		return EXIT_FAILURE;
-	}
-
-	return EXIT_SUCCESS;
+	return 0;
 }

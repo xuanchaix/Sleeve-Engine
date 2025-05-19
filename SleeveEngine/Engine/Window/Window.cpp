@@ -17,9 +17,7 @@ void Window::InitWindow()
 	glfwSetWindowUserPointer( m_window, this );
 	glfwSetFramebufferSizeCallback( m_window, FramebufferResizeCallback );
 	glfwSetKeyCallback( m_window, InputSystem::KeyCallback );
-	glfwSetCursorPosCallback( m_window, InputSystem::CursorPositionCallback );
 	glfwSetMouseButtonCallback( m_window, InputSystem::MouseButtonCallback );
-	glfwSetInputMode( m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED );
 
 	int width, height;
 	glfwGetWindowSize( m_window, &width, &height );
@@ -52,4 +50,25 @@ GLFWwindow* Window::GetGLFWWindow() const
 Vec2 Window::GetWindowSize() const
 {
 	return m_windowSize;
+}
+
+void Window::SetCursorInputMode( CursorInputMode newMode )
+{
+	if (m_cursorInputMode != newMode) {
+		m_cursorInputMode = newMode;
+		if (m_cursorInputMode == CursorInputMode::NORMAL) {
+			glfwSetInputMode( m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL );
+		}
+		else if (m_cursorInputMode == CursorInputMode::HIDDEN) {
+			glfwSetInputMode( m_window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN );
+		}
+		else if (m_cursorInputMode == CursorInputMode::OFFSET) {
+			glfwSetInputMode( m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED );
+		}
+	}
+}
+
+CursorInputMode Window::GetCursorInputMode() const
+{
+	return m_cursorInputMode;
 }

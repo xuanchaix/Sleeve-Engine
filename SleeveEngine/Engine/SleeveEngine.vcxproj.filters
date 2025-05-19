@@ -19,6 +19,12 @@
     <Filter Include="Window">
       <UniqueIdentifier>{03ad6e58-23dc-467a-92f7-b85478205a00}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ThirdParty">
+      <UniqueIdentifier>{cbb337ba-0a92-4385-b82d-8f0027dfe865}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\tinyfiledialogs">
+      <UniqueIdentifier>{8fcf43f9-6796-42ba-ac50-fcc7ebc50eec}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Graphics\Camera.cpp">
@@ -71,6 +77,12 @@
     </ClCompile>
     <ClCompile Include="Window\Window.cpp">
       <Filter>Window</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Error.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\ThirdParty\tinyfiledialogs\tinyfiledialogs.c">
+      <Filter>ThirdParty\tinyfiledialogs</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -166,6 +178,12 @@
     </ClInclude>
     <ClInclude Include="Window\Window.h">
       <Filter>Window</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Error.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\ThirdParty\tinyfiledialogs\tinyfiledialogs.h">
+      <Filter>ThirdParty\tinyfiledialogs</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

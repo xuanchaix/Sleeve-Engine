@@ -19,8 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\ThirdParty\tinyfiledialogs\tinyfiledialogs.c" />
     <ClCompile Include="Core\Clock.cpp" />
     <ClCompile Include="Core\EngineCommon.cpp" />
+    <ClCompile Include="Core\Error.cpp" />
     <ClCompile Include="Core\ResourceManager.cpp" />
     <ClCompile Include="Core\Time.cpp" />
     <ClCompile Include="Entity\Entity.cpp" />
@@ -38,10 +40,12 @@
     <ClCompile Include="Window\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\ThirdParty\tinyfiledialogs\tinyfiledialogs.h" />
     <ClInclude Include="Core\Clock.h" />
     <ClInclude Include="Core\Color.h" />
     <ClInclude Include="Core\EngineCommon.h" />
     <ClInclude Include="Core\EngineFwdMinor.h" />
+    <ClInclude Include="Core\Error.h" />
     <ClInclude Include="Core\ResourceManager.h" />
     <ClInclude Include="Core\Time.h" />
     <ClInclude Include="Entity\Entity.h" />
@@ -152,7 +156,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>.\;..\..\ThirdParty\glfw-3.4.bin.WIN64\include;..\..\ThirdParty\VulkanSDK\1.4.309.0\Include;..\..\ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;..\..\ThirdParty\glfw-3.4.bin.WIN64\include;..\..\ThirdParty\VulkanSDK\1.4.309.0\Include;..\..\;..\..\ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -180,7 +184,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>.\;..\..\ThirdParty\glfw-3.4.bin.WIN64\include;..\..\ThirdParty\VulkanSDK\1.4.309.0\Include;..\..\ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;..\..\ThirdParty\glfw-3.4.bin.WIN64\include;..\..\ThirdParty\VulkanSDK\1.4.309.0\Include;..\..\;..\..\ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -208,7 +212,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>.\;..\..\ThirdParty\glfw-3.4.bin.WIN64\include;..\..\ThirdParty\VulkanSDK\1.4.309.0\Include;..\..\ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;..\..\ThirdParty\glfw-3.4.bin.WIN64\include;..\..\ThirdParty\VulkanSDK\1.4.309.0\Include;..\..\;..\..\ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -236,7 +240,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>.\;..\..\ThirdParty\glfw-3.4.bin.WIN64\include;..\..\ThirdParty\VulkanSDK\1.4.309.0\Include;..\..\ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;..\..\ThirdParty\glfw-3.4.bin.WIN64\include;..\..\ThirdParty\VulkanSDK\1.4.309.0\Include;..\..\;..\..\ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>

@@ -126,9 +126,9 @@ public:
 
 	static void KeyCallback( GLFWwindow* window, int key, int scanCode, int action, int mods );
 	static void MouseButtonCallback( GLFWwindow* window, int button, int action, int mods );
-	static void CursorPositionCallback( GLFWwindow* window, double xpos, double ypos );
 
 	KeyState m_keyStates[KEY_NUM];
 	Vec2 m_cursorPosDeltaOffset;
 	Vec2 m_cursorPosThisFrame;
+	bool m_skipCursorDeltaOffsetThisFrame = true;
 };

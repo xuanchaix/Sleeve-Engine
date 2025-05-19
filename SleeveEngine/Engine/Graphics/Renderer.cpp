@@ -99,7 +99,7 @@ void Renderer::BeginFrame()
 		return;
 	}
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-		throw std::runtime_error( "failed to acquire swap chain image!" );
+		THROW_ERROR( "failed to acquire swap chain image!" );
 	}
 
 	// Only reset the fence if we are submitting work
@@ -112,13 +112,9 @@ void Renderer::BeginFrame()
 	beginInfo.flags = 0; // Optional
 	beginInfo.pInheritanceInfo = nullptr; // Optional
 
-	if (vkBeginCommandBuffer( m_commandBuffers[m_currentFrame], &beginInfo ) != VK_SUCCESS) {
-		throw std::runtime_error( "failed to begin recording command buffer!" );
-	}
+	ASSERT_OR_ERROR( vkBeginCommandBuffer( m_commandBuffers[m_currentFrame], &beginInfo ) == VK_SUCCESS, "failed to begin recording command buffer!" );
 
-	if (vkResetCommandPool( m_device, m_transferCommandPools[m_currentFrame], 0) != VK_SUCCESS) {
-		throw std::runtime_error( "failed to reset transfer command buffer!" );
-	}
+	ASSERT_OR_ERROR( vkResetCommandPool( m_device, m_transferCommandPools[m_currentFrame], 0 ) == VK_SUCCESS, "failed to reset transfer command buffer!" );
 	
 	m_stagingBuffers[m_currentFrame]->Refresh();
 
@@ -169,9 +165,7 @@ void Renderer::EndFrame()
 {
 	vkCmdEndRenderPass( m_commandBuffers[m_currentFrame] );
 
-	if (vkEndCommandBuffer( m_commandBuffers[m_currentFrame] ) != VK_SUCCESS) {
-		throw std::runtime_error( "failed to record command buffer!" );
-	}
+	ASSERT_OR_ERROR( vkEndCommandBuffer( m_commandBuffers[m_currentFrame] ) == VK_SUCCESS, "failed to record command buffer!" );
 
 	for (size_t i = 0; i < m_copyCommands.size(); ++i) {
 		VkBufferCopy copyRegion{};
@@ -212,9 +206,7 @@ void Renderer::EndFrame()
 	graphicsQueueSubmitInfo.signalSemaphoreCount = 1;
 	graphicsQueueSubmitInfo.pSignalSemaphores = signalSemaphores;
 
-	if (vkQueueSubmit( m_graphicsQueue, 1, &graphicsQueueSubmitInfo, m_inFlightFences[m_currentFrame] ) != VK_SUCCESS) {
-		throw std::runtime_error( "failed to submit draw command buffer!" );
-	}
+	ASSERT_OR_ERROR( vkQueueSubmit( m_graphicsQueue, 1, &graphicsQueueSubmitInfo, m_inFlightFences[m_currentFrame] ) == VK_SUCCESS, "failed to submit draw command buffer!" );
 
 	VkPresentInfoKHR presentInfo{};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -233,7 +225,7 @@ void Renderer::EndFrame()
 		RecreateSwapChain();
 	}
 	else if (result != VK_SUCCESS) {
-		throw std::runtime_error( "failed to present swap chain image!" );
+		THROW_ERROR( "failed to present swap chain image!" );
 	}
 
 	auto it = m_pendingDestroyBuffers.begin();
@@ -292,9 +284,7 @@ void Renderer::DeferredDestroyBuffer( VkBuffer buffer, VkDeviceMemory deviceMemo
 
 void Renderer::CreateInstance()
 {
-	if (enableValidationLayers && !CheckValidationLayerSupport()) {
-		throw std::runtime_error( "validation layers requested, but not available!" );
-	}
+	ASSERT_OR_ERROR( !(enableValidationLayers && !CheckValidationLayerSupport()), "validation layers requested, but not available!" );
 
 	VkApplicationInfo appInfo{};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -326,7 +316,7 @@ void Renderer::CreateInstance()
 	}
 
 	if (vkCreateInstance( &createInfo, nullptr, &m_instance ) != VK_SUCCESS) {
-		throw std::runtime_error( "failed to create instance!" );
+		THROW_ERROR( "failed to create instance!" );
 	}
 }
 
@@ -335,15 +325,13 @@ void Renderer::SetupDebugMessenger()
 	if (!enableValidationLayers) return;
 	VkDebugUtilsMessengerCreateInfoEXT createInfo{};
 	PopulateDebugMessengerCreateInfo( createInfo );
-	if (CreateDebugUtilsMessengerEXT( m_instance, &createInfo, nullptr, &m_debugMessenger ) != VK_SUCCESS) {
-		throw std::runtime_error( "failed to set up debug messenger!" );
-	}
+	ASSERT_OR_ERROR( CreateDebugUtilsMessengerEXT( m_instance, &createInfo, nullptr, &m_debugMessenger ) == VK_SUCCESS, "failed to set up debug messenger!" );
 }
 
 void Renderer::CreateSurface()
 {
-	if (glfwCreateWindowSurface( m_instance, g_mainWindow->GetGLFWWindow(), nullptr, &m_surface) != VK_SUCCESS) {
-		throw std::runtime_error( "failed to create window surface!" );
+	if (glfwCreateWindowSurface( m_instance, g_mainWindow->GetGLFWWindow(), nullptr, &m_surface ) != VK_SUCCESS) {
+		THROW_ERROR( "failed to create window surface!" );
 	}
 }
 
@@ -351,9 +339,8 @@ void Renderer::PickPhysicalDevice()
 {
 	uint32_t deviceCount = 0;
 	vkEnumeratePhysicalDevices( m_instance, &deviceCount, nullptr );
-	if (deviceCount == 0) {
-		throw std::runtime_error( "failed to find GPUs with Vulkan support!" );
-	}
+	ASSERT_OR_ERROR( deviceCount != 0, "failed to find GPUs with Vulkan support!" );
+
 	std::vector<VkPhysicalDevice> devices( deviceCount );
 	vkEnumeratePhysicalDevices( m_instance, &deviceCount, devices.data() );
 
@@ -364,7 +351,7 @@ void Renderer::PickPhysicalDevice()
 		}
 
 		if (m_physicalDevice == VK_NULL_HANDLE) {
-			throw std::runtime_error( "failed to find a suitable GPU!" );
+			THROW_ERROR( "failed to find a suitable GPU!" );
 		}
 	}
 	else { // multiple graphics card
@@ -377,7 +364,7 @@ void Renderer::PickPhysicalDevice()
 		}
 
 		if (suitableDevice.empty()) {
-			throw std::runtime_error( "failed to find a suitable GPU!" );
+			THROW_ERROR( "failed to find a suitable GPU!" );
 		}
 
 		// then give score to each graphics card
@@ -397,7 +384,7 @@ void Renderer::PickPhysicalDevice()
 		}
 
 		if (m_physicalDevice == VK_NULL_HANDLE) {
-			throw std::runtime_error( "failed to find a suitable GPU!" );
+			THROW_ERROR( "failed to find a suitable GPU!" );
 		}
 	}
 
@@ -438,7 +425,7 @@ void Renderer::CreateLogicalDevice()
 	createInfo.pEnabledFeatures = &deviceFeatures;
 
 	if (vkCreateDevice( m_physicalDevice, &createInfo, nullptr, &m_device ) != VK_SUCCESS) {
-		throw std::runtime_error( "failed to create logical device!" );
+		THROW_ERROR( "failed to create logical device!" );
 	}
 
 	vkGetDeviceQueue( m_device, indices.m_graphicsFamily.value(), 0, &m_graphicsQueue );
@@ -487,7 +474,7 @@ void Renderer::CreateSwapChain()
 	createInfo.oldSwapchain = VK_NULL_HANDLE;
 
 	if (vkCreateSwapchainKHR( m_device, &createInfo, nullptr, &m_swapChain ) != VK_SUCCESS) {
-		throw std::runtime_error( "failed to create swap chain!" );
+		THROW_ERROR( "failed to create swap chain!" );
 	}
 
 	vkGetSwapchainImagesKHR( m_device, m_swapChain, &imageCount, nullptr );
@@ -559,12 +546,9 @@ void Renderer::CreateRenderPass()
 	renderPassInfo.pDependencies = &dependency;
 
 	if (vkCreateRenderPass( m_device, &renderPassInfo, nullptr, &m_renderPass ) != VK_SUCCESS) {
-		throw std::runtime_error( "failed to create render pass!" );
+		THROW_ERROR( "failed to create render pass!" );
 	}
 }
-
-
-
 
 void Renderer::CreateFramebuffers()
 {
@@ -585,7 +569,7 @@ void Renderer::CreateFramebuffers()
 		framebufferInfo.layers = 1;
 
 		if (vkCreateFramebuffer( m_device, &framebufferInfo, nullptr, &m_swapChainFramebuffers[i] ) != VK_SUCCESS) {
-			throw std::runtime_error( "failed to create framebuffer!" );
+			THROW_ERROR( "failed to create framebuffer!" );
 		}
 	}
 }
@@ -600,7 +584,7 @@ void Renderer::CreateCommandPools()
 	poolInfo.queueFamilyIndex = queueFamilyIndices.m_graphicsFamily.value();
 
 	if (vkCreateCommandPool( m_device, &poolInfo, nullptr, &m_commandPool ) != VK_SUCCESS) {
-		throw std::runtime_error( "failed to create command pool!" );
+		THROW_ERROR( "failed to create command pool!" );
 	}
 
 	m_transferCommandPools.resize( MAX_FRAMES_IN_FLIGHT );
@@ -611,8 +595,8 @@ void Renderer::CreateCommandPools()
 	transferPoolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
 
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
-		if (vkCreateCommandPool( m_device, &transferPoolInfo, nullptr, &m_transferCommandPools[i]) != VK_SUCCESS) {
-			throw std::runtime_error( "failed to create command pool!" );
+		if (vkCreateCommandPool( m_device, &transferPoolInfo, nullptr, &m_transferCommandPools[i] ) != VK_SUCCESS) {
+			THROW_ERROR( "failed to create command pool!" );
 		}
 	}
 }
@@ -678,7 +662,7 @@ void Renderer::CreateTextureSampler()
 	samplerInfo.minLod = 0.0f;
 	samplerInfo.maxLod = 0.0f;
 	if (vkCreateSampler( m_device, &samplerInfo, nullptr, &m_textureSampler ) != VK_SUCCESS) {
-		throw std::runtime_error( "failed to create texture sampler!" );
+		THROW_ERROR( "failed to create texture sampler!" );
 	}
 }
 
@@ -698,7 +682,7 @@ VkImageView Renderer::CreateImageView( VkImage image, VkFormat format, VkImageAs
 
 	VkImageView imageView;
 	if (vkCreateImageView( m_device, &viewInfo, nullptr, &imageView ) != VK_SUCCESS) {
-		throw std::runtime_error( "failed to create image view!" );
+		THROW_ERROR( "failed to create image view!" );
 	}
 
 	return imageView;
@@ -722,7 +706,7 @@ void Renderer::CreateImage( uint32_t width, uint32_t height, VkFormat format, Vk
 	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
 	if (vkCreateImage( m_device, &imageInfo, nullptr, &image ) != VK_SUCCESS) {
-		throw std::runtime_error( "failed to create image!" );
+		THROW_ERROR( "failed to create image!" );
 	}
 
 	VkMemoryRequirements memRequirements;
@@ -734,7 +718,7 @@ void Renderer::CreateImage( uint32_t width, uint32_t height, VkFormat format, Vk
 	allocInfo.memoryTypeIndex = FindMemoryType( memRequirements.memoryTypeBits, properties );
 
 	if (vkAllocateMemory( m_device, &allocInfo, nullptr, &imageMemory ) != VK_SUCCESS) {
-		throw std::runtime_error( "failed to allocate image memory!" );
+		THROW_ERROR( "failed to allocate image memory!" );
 	}
 
 	vkBindImageMemory( m_device, image, imageMemory, 0 );
@@ -769,7 +753,7 @@ void Renderer::CreateCommandBuffers()
 	allocInfo.commandBufferCount = (uint32_t)m_commandBuffers.size();
 
 	if (vkAllocateCommandBuffers( m_device, &allocInfo, m_commandBuffers.data() ) != VK_SUCCESS) {
-		throw std::runtime_error( "failed to allocate command buffers!" );
+		THROW_ERROR( "failed to allocate command buffers!" );
 	}
 	// 	VkMemoryRequirements memRequirements;
 	// 	vkGetBufferMemoryRequirements( m_device, m_vertexBuffer->m_buffer, &memRequirements );
@@ -784,7 +768,7 @@ void Renderer::CreateCommandBuffers()
 		allocInfo.commandBufferCount = 1;
 
 		if (vkAllocateCommandBuffers( m_device, &allocInfo, &m_transferCommandBuffers[i]) != VK_SUCCESS) {
-			throw std::runtime_error( "failed to allocate transfer command buffers!" );
+			THROW_ERROR( "failed to allocate transfer command buffers!" );
 		}
 	}
 }
@@ -822,7 +806,7 @@ void Renderer::CreateSyncObjects()
 			vkCreateFence( m_device, &fenceInfo, nullptr, &m_transferFences[i]) != VK_SUCCESS ||
 			vkCreateFence( m_device, &fenceInfo, nullptr, &m_inFlightFences[i] ) != VK_SUCCESS) {
 
-			throw std::runtime_error( "failed to create synchronization objects for a frame!" );
+			THROW_ERROR( "failed to create synchronization objects for a frame!" );
 		}
 	}
 
@@ -931,9 +915,7 @@ Texture* Renderer::CreateTextureFromFile( std::string const& fileName )
 	stbi_uc* pixels = stbi_load( fileName.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha );
 	VkDeviceSize imageSize = texWidth * texHeight * 4;
 
-	if (!pixels) {
-		throw std::runtime_error( "failed to load texture image!" );
-	}
+	ASSERT_OR_ERROR( pixels, "failed to load texture image!" );
 
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
@@ -1189,7 +1171,7 @@ UniformBufferBinding Renderer::AddDataToSharedUniformBuffer( UniformBufferDataBi
 				binding.m_modelUniformBufferOffset = dstOffset;
 			}
 			else {
-				throw std::runtime_error( "failed to allocate uniform buffer memory!" );
+				THROW_ERROR( "failed to allocate uniform buffer memory!" );
 			}
 		}
 	}
@@ -1280,7 +1262,7 @@ void Renderer::CreateBuffer( VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
 	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
 	if (vkCreateBuffer( m_device, &bufferInfo, nullptr, &buffer ) != VK_SUCCESS) {
-		throw std::runtime_error( "failed to create buffer!" );
+		THROW_ERROR( "failed to create buffer!" );
 	}
 
 	VkMemoryRequirements memRequirements;
@@ -1292,7 +1274,7 @@ void Renderer::CreateBuffer( VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
 	allocInfo.memoryTypeIndex = FindMemoryType( memRequirements.memoryTypeBits, properties );
 
 	if (vkAllocateMemory( m_device, &allocInfo, nullptr, &bufferMemory ) != VK_SUCCESS) {
-		throw std::runtime_error( "failed to allocate buffer memory!" );
+		THROW_ERROR( "failed to allocate buffer memory!" );
 	}
 
 	vkBindBufferMemory( m_device, buffer, bufferMemory, 0 );
@@ -1364,7 +1346,7 @@ void Renderer::TransitionImageLayout( VkImage image, VkFormat format, VkImageLay
 		destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 	}
 	else {
-		throw std::invalid_argument( "unsupported layout transition!" );
+		THROW_ERROR( "unsupported layout transition!" );
 	}
 
 	if (newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
@@ -1626,7 +1608,7 @@ VkFormat Renderer::FindSupportedFormat( const std::vector<VkFormat>& candidates,
 			return format;
 		}
 	}
-	throw std::runtime_error( "failed to find supported format!" );
+	THROW_ERROR( "failed to find supported format!" );
 }
 
 VkFormat Renderer::FindDepthFormat()
@@ -1653,7 +1635,7 @@ uint32_t Renderer::FindMemoryType( uint32_t typeFilter, VkMemoryPropertyFlags pr
 		}
 	}
 
-	throw std::runtime_error( "failed to find suitable memory type!" );
+	THROW_ERROR( "failed to find suitable memory type!" );
 }
 
 std::vector<const char*> Renderer::GetRequiredExtensions()

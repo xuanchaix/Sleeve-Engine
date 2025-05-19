@@ -13,7 +13,7 @@ struct Vector4;
 
 /// Clamp the value into the two bounds, the caller needs to make sure maxValue > minValue
 template<FloatingPointType T>
-T GetClamped( T value, T minValue, T maxValue );
+T GetClamped( T value, T minValue, T maxValue ) noexcept;
 /// Clamp the value into the two bounds, the caller needs to make sure maxValue > minValue
 inline int GetClamped( int value, int minValue, int maxValue );
 /// Clamp the value into 0 to 1

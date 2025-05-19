@@ -24,10 +24,13 @@ void App::Initialize()
 
 	g_theGame = new Game();
 	g_theGame->Initialize();
+
+	//g_mainWindow->SetCursorInputMode( CursorInputMode::OFFSET );
 }
 
 void App::Run()
 {
+
 	while (!AppShouldQuit()) {
 		auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -43,7 +46,7 @@ void App::Run()
 			currentTime = std::chrono::high_resolution_clock::now();
 			frameTime = std::chrono::duration<float, std::chrono::milliseconds::period>( currentTime - startTime ).count();
 		}
-		printf( "FPS: %.3f\n", 1000.f / frameTime );
+		//printf( "FPS: %.3f\n", 1000.f / frameTime );
 
 		if (g_theInput->WasKeyJustPressed( ENGINE_KEY_ESCAPE )) {
 			m_shouldQuit = true;

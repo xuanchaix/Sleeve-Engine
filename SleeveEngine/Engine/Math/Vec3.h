@@ -14,53 +14,53 @@ public:
 	// Construction/Destruction
 	~Vector3() {}
 	Vector3() = default;
-	Vector3( Vector3 const& copyFrom );
+	Vector3( Vector3 const& copyFrom ) noexcept;
 	//Vector2( IntVec2 const& copyFrom );
-	Vector3( Vector2<T> const& copyFrom );
-	explicit Vector3( T X, T Y, T Z );
+	Vector3( Vector2<T> const& copyFrom ) noexcept;
+	explicit Vector3( T X, T Y, T Z ) noexcept;
 	//bool SetFromText( char const* text );
 
 	// Accessors
-	T GetLength() const;
+	T GetLength() const noexcept;
 
-	T GetLengthSquared() const;
+	T GetLengthSquared() const noexcept;
 
 	//Vec2 const GetRotatedNewBasis( Vec2 const& iBasisNormal ) const;
 
-	Vector3 GetClamped( T maxLength ) const;
+	Vector3 GetClamped( T maxLength ) const noexcept;
 
-	Vector3 GetNormalized() const;
+	Vector3 GetNormalized() const noexcept;
 
-	void SetLength( T newLength );
+	void SetLength( T newLength ) noexcept;
 
-	void ClampLength( T maxLength );
+	void ClampLength( T maxLength ) noexcept;
 
-	void Normalize();
+	void Normalize() noexcept;
 
 	// Operators (const)
-	bool		operator==( Vector3 const& compare ) const;
-	bool		operator!=( Vector3 const& compare ) const;
-	Vector3 operator+( Vector3 const& vecToAdd ) const;
-	Vector3 operator-( Vector3 const& vecToSubtract ) const;
-	Vector3 operator-() const;
-	Vector3 operator*( T uniformScale ) const;
-	Vector3 operator*( Vector3 const& vecToMultiply ) const;
-	Vector3 operator/( T inverseScale ) const;
+	bool		operator==( Vector3 const& compare ) const noexcept;
+	bool		operator!=( Vector3 const& compare ) const noexcept;
+	Vector3 operator+( Vector3 const& vecToAdd ) const noexcept;
+	Vector3 operator-( Vector3 const& vecToSubtract ) const noexcept;
+	Vector3 operator-() const noexcept;
+	Vector3 operator*( T uniformScale ) const noexcept;
+	Vector3 operator*( Vector3 const& vecToMultiply ) const noexcept;
+	Vector3 operator/( T inverseScale ) const noexcept;
 
 	// Operators (self-mutating / non-const)
-	void		operator+=( Vector3 const& vecToAdd );
-	void		operator-=( Vector3 const& vecToSubtract );
-	void		operator*=( T uniformScale );
-	void		operator/=( T uniformDivisor );
-	void		operator=( Vector2<T> const& copyFrom );
-	void		operator=( Vector3 const& copyFrom );
+	void		operator+=( Vector3 const& vecToAdd ) noexcept;
+	void		operator-=( Vector3 const& vecToSubtract ) noexcept;
+	void		operator*=( T uniformScale ) noexcept;
+	void		operator/=( T uniformDivisor ) noexcept;
+	void		operator=( Vector2<T> const& copyFrom ) noexcept;
+	void		operator=( Vector3 const& copyFrom ) noexcept;
 
 
-	friend Vector3 operator*( T uniformScale, Vector3 const& vecToScale );
+	friend Vector3 operator*( T uniformScale, Vector3 const& vecToScale ) noexcept;
 };
 
 template<FloatingPointType T>
-void Vector3<T>::operator=( Vector3 const& copyFrom )
+void Vector3<T>::operator=( Vector3 const& copyFrom ) noexcept
 {
 	x = copyFrom.x;
 	y = copyFrom.y;
@@ -68,7 +68,7 @@ void Vector3<T>::operator=( Vector3 const& copyFrom )
 }
 
 template<FloatingPointType T>
-void Vector3<T>::operator=( Vector2<T> const& copyFrom )
+void Vector3<T>::operator=( Vector2<T> const& copyFrom ) noexcept
 {
 	x = copyFrom.x;
 	y = copyFrom.y;
@@ -76,7 +76,7 @@ void Vector3<T>::operator=( Vector2<T> const& copyFrom )
 }
 
 template<FloatingPointType T>
-void Vector3<T>::operator/=( T uniformDivisor )
+void Vector3<T>::operator/=( T uniformDivisor ) noexcept
 {
 	T inversedDivisor = static_cast<T>(1.f) / uniformDivisor;
 	x *= inversedDivisor;
@@ -85,7 +85,7 @@ void Vector3<T>::operator/=( T uniformDivisor )
 }
 
 template<FloatingPointType T>
-void Vector3<T>::operator*=( T uniformScale )
+void Vector3<T>::operator*=( T uniformScale ) noexcept
 {
 	x *= uniformScale;
 	y *= uniformScale;
@@ -93,7 +93,7 @@ void Vector3<T>::operator*=( T uniformScale )
 }
 
 template<FloatingPointType T>
-void Vector3<T>::operator-=( Vector3 const& vecToSubtract )
+void Vector3<T>::operator-=( Vector3 const& vecToSubtract ) noexcept
 {
 	x -= vecToSubtract.x;
 	y -= vecToSubtract.y;
@@ -101,7 +101,7 @@ void Vector3<T>::operator-=( Vector3 const& vecToSubtract )
 }
 
 template<FloatingPointType T>
-void Vector3<T>::operator+=( Vector3 const& vecToAdd )
+void Vector3<T>::operator+=( Vector3 const& vecToAdd ) noexcept
 {
 	x += vecToAdd.x;
 	y += vecToAdd.y;
@@ -109,62 +109,62 @@ void Vector3<T>::operator+=( Vector3 const& vecToAdd )
 }
 
 template<FloatingPointType T>
-Vector3<T> Vector3<T>::operator/( T inverseScale ) const
+Vector3<T> Vector3<T>::operator/( T inverseScale ) const noexcept
 {
 	T inversedDivisor = static_cast<T>(1.f) / inverseScale;
 	return Vector3( x * inversedDivisor, y * inversedDivisor, z * inversedDivisor );
 }
 
 template<FloatingPointType T>
-Vector3<T> Vector3<T>::operator*( Vector3 const& vecToMultiply ) const
+Vector3<T> Vector3<T>::operator*( Vector3 const& vecToMultiply ) const noexcept
 {
 	return Vector3( x * vecToMultiply.x, y * vecToMultiply.y, z * vecToMultiply.z );
 }
 
 template<FloatingPointType T>
-Vector3<T> Vector3<T>::operator*( T uniformScale ) const
+Vector3<T> Vector3<T>::operator*( T uniformScale ) const noexcept
 {
 	return Vector3( x * uniformScale, y * uniformScale, z * uniformScale );
 }
 
 template<FloatingPointType T>
-Vector3<T> operator*( T uniformScale, Vector3<T> const& vecToScale ) 
+Vector3<T> operator*( T uniformScale, Vector3<T> const& vecToScale ) noexcept
 {
 	return Vector3( uniformScale * vecToScale.x, uniformScale * vecToScale.y, uniformScale * vecToScale.z );
 }
 
 template<FloatingPointType T>
-Vector3<T> Vector3<T>::operator-() const
+Vector3<T> Vector3<T>::operator-() const noexcept
 {
 	return Vector3( -x, -y, -z );
 }
 
 template<FloatingPointType T>
-Vector3<T> Vector3<T>::operator-( Vector3 const& vecToSubtract ) const
+Vector3<T> Vector3<T>::operator-( Vector3 const& vecToSubtract ) const noexcept
 {
 	return Vector3( x - vecToSubtract.x, y - vecToSubtract.y, z - vecToSubtract.z );
 }
 
 template<FloatingPointType T>
-Vector3<T> Vector3<T>::operator+( Vector3 const& vecToAdd ) const
+Vector3<T> Vector3<T>::operator+( Vector3 const& vecToAdd ) const noexcept
 {
 	return Vector3( x + vecToAdd.x, y + vecToAdd.y, z + vecToAdd.z );
 }
 
 template<FloatingPointType T>
-bool Vector3<T>::operator!=( Vector3 const& compare ) const
+bool Vector3<T>::operator!=( Vector3 const& compare ) const noexcept
 {
 	return x != compare.x || y != compare.y || z != compare.z;
 }
 
 template<FloatingPointType T>
-bool Vector3<T>::operator==( Vector3 const& compare ) const
+bool Vector3<T>::operator==( Vector3 const& compare ) const noexcept
 {
 	return x == compare.x && y == compare.y && z == compare.z;
 }
 
 template<FloatingPointType T>
-void Vector3<T>::Normalize()
+void Vector3<T>::Normalize() noexcept
 {
 	if (x == static_cast<T>(0.f) && y == static_cast<T>(0.f) && z == static_cast<T>(0.f)) {
 		return;
@@ -176,7 +176,7 @@ void Vector3<T>::Normalize()
 }
 
 template<FloatingPointType T>
-void Vector3<T>::ClampLength( T maxLength )
+void Vector3<T>::ClampLength( T maxLength ) noexcept
 {
 	T length = GetLength();
 	if (length > maxLength && maxLength >= static_cast<T>(0.f) && length != static_cast<T>(0.f)) {
@@ -188,7 +188,7 @@ void Vector3<T>::ClampLength( T maxLength )
 }
 
 template<FloatingPointType T>
-void Vector3<T>::SetLength( T newLength )
+void Vector3<T>::SetLength( T newLength ) noexcept
 {
 	if (x != static_cast<T>(0.f) && y != static_cast<T>(0.f) && z != static_cast<T>(0.f)) {
 		T ratio = newLength * GetLength();
@@ -199,7 +199,7 @@ void Vector3<T>::SetLength( T newLength )
 }
 
 template<FloatingPointType T>
-Vector3<T> Vector3<T>::GetNormalized() const
+Vector3<T> Vector3<T>::GetNormalized() const noexcept
 {
 	if (x == static_cast<T>(0.f) && y == static_cast<T>(0.f) && z == static_cast<T>(0.f)) {
 		return Vector3();
@@ -209,7 +209,7 @@ Vector3<T> Vector3<T>::GetNormalized() const
 }
 
 template<FloatingPointType T>
-Vector3<T> Vector3<T>::GetClamped( T maxLength ) const
+Vector3<T> Vector3<T>::GetClamped( T maxLength ) const noexcept
 {
 	T length = GetLength();
 	if (length > maxLength && maxLength >= static_cast<T>(0.f) && length != static_cast<T>(0.f)) {
@@ -220,33 +220,33 @@ Vector3<T> Vector3<T>::GetClamped( T maxLength ) const
 }
 
 template<FloatingPointType T>
-T Vector3<T>::GetLengthSquared() const
+T Vector3<T>::GetLengthSquared() const noexcept
 {
 	return x * x + y * y + z * z;
 }
 
 template<FloatingPointType T>
-T Vector3<T>::GetLength() const
+T Vector3<T>::GetLength() const noexcept
 {
 	return std::sqrt( x * x + y * y + z * z );
 }
 
 template<FloatingPointType T>
-Vector3<T>::Vector3( T X, T Y, T Z )
+Vector3<T>::Vector3( T X, T Y, T Z ) noexcept
 	:x(X), y(Y), z(Z)
 {
 
 }
 
 template<FloatingPointType T>
-Vector3<T>::Vector3( Vector2<T> const& copyFrom )
+Vector3<T>::Vector3( Vector2<T> const& copyFrom ) noexcept
 	:x(copyFrom.x), y(copyFrom.y), z(static_cast<T>(0.f))
 {
 
 }
 
 template<FloatingPointType T>
-Vector3<T>::Vector3( Vector3 const& copyFrom )
+Vector3<T>::Vector3( Vector3 const& copyFrom ) noexcept
 	:x( copyFrom.x ), y( copyFrom.y ), z( copyFrom.z )
 {
 
