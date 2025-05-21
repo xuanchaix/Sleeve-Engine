@@ -846,14 +846,9 @@ void Renderer::BindShader( Shader* shader )
 	}
 }
 
-void Renderer::BeginDrawCommands( Legacy_EntityUniformBuffers const& uniformBuffers )
+void Renderer::BeginDrawCommands( UniformBufferBinding const& uniformBufferBinding, TextureBinding const& textureBinding )
 {
-	m_currentShader->UpdateDescriptorSets( uniformBuffers );
-}
-
-void Renderer::BeginDrawCommands( UniformBufferBinding const& binding )
-{
-	m_currentShader->UpdateDescriptorSets( binding );
+	m_currentShader->UpdateDescriptorSets( uniformBufferBinding, textureBinding );
 }
 
 VkCommandBuffer Renderer::BeginSingleTimeCommands()
@@ -942,6 +937,37 @@ Texture* Renderer::CreateTextureFromFile( std::string const& fileName )
 	return texture;
 }
 
+Texture* Renderer::CreateWhiteTexture()
+{
+	// RGBA (8 bits per component), 4 pixels (2x2)
+	const uint32_t texWidth = 2, texHeight = 2;
+	std::array<uint8_t, 4 * texWidth * texHeight> pixels;
+	std::fill( pixels.begin(), pixels.end(), 0xFF ); // All white (255)
+	VkDeviceSize imageSize = texWidth * texHeight * 4;
+
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
+	CreateBuffer( imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory );
+
+	void* data;
+	vkMapMemory( m_device, stagingBufferMemory, 0, imageSize, 0, &data );
+	memcpy( data, pixels.data(), static_cast<size_t>(imageSize) );
+	vkUnmapMemory( m_device, stagingBufferMemory );
+
+	Texture* texture = new Texture( m_device );
+	CreateImage( texWidth, texHeight, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, texture->m_textureImage, texture->m_textureDeviceMemory );
+	TransitionImageLayout( texture->m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL );
+	CopyBufferToImage( stagingBuffer, texture->m_textureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight) );
+	TransitionImageLayout( texture->m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
+	vkDestroyBuffer( m_device, stagingBuffer, nullptr );
+	vkFreeMemory( m_device, stagingBufferMemory, nullptr );
+
+	// create texture image view
+	texture->m_textureImageView = CreateImageView( texture->m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT );
+
+	return texture;
+}
+
 IndexBuffer* Renderer::CreateIndexBuffer( void* indexData, uint64_t size, uint32_t indexCount )
 {
 	VkDeviceSize bufferSize = size;
@@ -1013,6 +1039,9 @@ Shader* Renderer::CreateShader( std::string const& fileName )
 
 VertexBufferBinding Renderer::AddVertsDataToSharedVertexBuffer( void* vertexData, uint64_t size, uint32_t vertexCount )
 {
+	if (size == 0 || vertexCount == 0) {
+		return VertexBufferBinding();
+	}
 	VkDeviceSize bufferSize = size;
 
 // 	VkBuffer stagingBuffer;
@@ -1087,6 +1116,9 @@ VertexBufferBinding Renderer::AddVertsDataToSharedVertexBuffer( void* vertexData
 
 IndexBufferBinding Renderer::AddIndicesDataToSharedIndexBuffer( void* indexData, uint64_t size, uint32_t indexCount )
 {
+	if (size == 0 || indexCount == 0) {
+		return IndexBufferBinding();
+	}
 	constexpr VkDeviceSize intStride = sizeof( uint16_t );
 	VkDeviceSize bufferSize = size;
 

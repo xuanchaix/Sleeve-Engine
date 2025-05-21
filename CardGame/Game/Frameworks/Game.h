@@ -9,4 +9,5 @@ public:
 	void Render() const;
 
 	PerspectiveCamera* m_gameDefault3DCamera = nullptr;
+	OrthographicCamera* m_gameDefault2DCamera = nullptr;
 };

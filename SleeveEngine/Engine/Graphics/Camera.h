@@ -16,7 +16,7 @@ struct PerspectiveCamera : public Camera {
 	~PerspectiveCamera();
 
 	virtual void BeginPlay();
-	/// Get view matrix of the camera
+	/// Get view matrix of the camera, including render matrix
 	virtual Mat44 GetViewMatrix() const;
 	/// Get perspective projection matrix of the camera
 	virtual Mat44 GetProjectionMatrix() const;
@@ -35,12 +35,12 @@ struct OrthographicCamera : public Camera {
 	~OrthographicCamera();
 
 	virtual void BeginPlay();
-	/// Get view matrix of the camera
+	/// Get view matrix of the camera, including render matrix
 	virtual Mat44 GetViewMatrix() const;
 	/// Get orthographic projection matrix of the camera
 	virtual Mat44 GetProjectionMatrix() const;
 
-	Vec2 m_xyPos = Vec2( 0.f, 0.f );
+	AABB2 m_bounds;
 	float m_near = 0.f;
 	float m_far = 1.f;
 };

@@ -1,8 +1,14 @@
 #include "Core/ResourceManager.h"
 #include "Graphics/Renderer.h"
 
+ResourceManager::ResourceManager()
+{
+
+}
+
 ResourceManager::~ResourceManager()
 {
+	delete m_whiteTexture;
 	for (auto& texturePair : m_textures) {
 		delete texturePair.second;
 	}
@@ -21,6 +27,17 @@ Texture* ResourceManager::GetOrLoadTexture( std::string const& path )
 	}
 	else {
 		return iter->second;
+	}
+}
+
+Texture* ResourceManager::GetWhiteTexture()
+{
+	if (m_whiteTexture) {
+		return m_whiteTexture;
+	}
+	else {
+		m_whiteTexture = g_theRenderer->CreateWhiteTexture();
+		return m_whiteTexture;
 	}
 }
 

@@ -9,59 +9,7 @@
 #include "Graphics/GraphicsCommon.h"
 #include "Graphics/Renderer.h"
 
-void Shader::UpdateDescriptorSets( Legacy_EntityUniformBuffers const& uniformBuffers )
-{
-	// Get a descriptor set, all acquired sets will be freed next frame
-	VkDescriptorSet set = m_pools->AcquireDescriptorSet( m_descriptorSetLayout );
-
-	VkDescriptorBufferInfo vpBufferInfo{};
-	vpBufferInfo.buffer = g_theRenderer->m_currentCamera->m_cameraUniformBuffers[m_renderer->GetCurFrameNumber()]->m_buffer;
-	vpBufferInfo.offset = 0;
-	vpBufferInfo.range = sizeof( CameraUniformBufferObject );
-
-	VkDescriptorBufferInfo modelBufferInfo{};
-	modelBufferInfo.buffer = uniformBuffers.m_uniformBuffersModel[m_renderer->GetCurFrameNumber()]->m_buffer;
-	modelBufferInfo.offset = 0;
-	modelBufferInfo.range = sizeof( ModelUniformBufferObject );
-
-	VkDescriptorImageInfo imageInfo{};
-	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageInfo.imageView = m_texture->m_textureImageView;
-	imageInfo.sampler = m_renderer->m_textureSampler;
-
-	std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
-
-	descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptorWrites[0].dstSet = set;
-	descriptorWrites[0].dstBinding = 0;
-	descriptorWrites[0].dstArrayElement = 0;
-	descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	descriptorWrites[0].descriptorCount = 1;
-	descriptorWrites[0].pBufferInfo = &vpBufferInfo;
-
-	descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptorWrites[1].dstSet = set;
-	descriptorWrites[1].dstBinding = 1;
-	descriptorWrites[1].dstArrayElement = 0;
-	descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	descriptorWrites[1].descriptorCount = 1;
-	descriptorWrites[1].pBufferInfo = &modelBufferInfo;
-
-	descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptorWrites[2].dstSet = set;
-	descriptorWrites[2].dstBinding = 2;
-	descriptorWrites[2].dstArrayElement = 0;
-	descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	descriptorWrites[2].descriptorCount = 1;
-	descriptorWrites[2].pImageInfo = &imageInfo;
-
-	// bind the set
-	vkCmdBindDescriptorSets( g_theRenderer->m_commandBuffers[g_theRenderer->m_currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &set, 0, nullptr );
-	// update the set
-	vkUpdateDescriptorSets( m_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr );
-}
-
-void Shader::UpdateDescriptorSets( UniformBufferBinding const& binding )
+void Shader::UpdateDescriptorSets( UniformBufferBinding const& uniformBufferBinding, TextureBinding const& textureBinding )
 {
 	// Get a descriptor set, all acquired sets will be freed next frame
 	VkDescriptorSet set = m_pools->AcquireDescriptorSet( m_descriptorSetLayout );
@@ -73,12 +21,12 @@ void Shader::UpdateDescriptorSets( UniformBufferBinding const& binding )
 
 	VkDescriptorBufferInfo modelBufferInfo{};
 	modelBufferInfo.buffer = m_renderer->m_sharedModelUniformBuffers[m_renderer->GetCurFrameNumber()]->m_buffer;
-	modelBufferInfo.offset = binding.m_modelUniformBufferOffset;
+	modelBufferInfo.offset = uniformBufferBinding.m_modelUniformBufferOffset;
 	modelBufferInfo.range = sizeof( ModelUniformBufferObject );
 
 	VkDescriptorImageInfo imageInfo{};
 	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageInfo.imageView = m_texture->m_textureImageView;
+	imageInfo.imageView = textureBinding.m_texture->m_textureImageView;
 	imageInfo.sampler = m_renderer->m_textureSampler;
 
 	std::array<VkWriteDescriptorSet, 3> descriptorWrites{};
@@ -123,7 +71,6 @@ Shader::~Shader()
 void Shader::LoadShader( std::string const& fileName )
 {
 	m_name = fileName;
-	m_texture = g_theResourceManager->GetOrLoadTexture( "Data/Textures/texture.png" );
 	CreateDescriptorSetLayout();
 	CreateGraphicsPipeline();
 	m_pools = g_theRenderer->GetOrCreateDescriptorPools( 2, 1 );

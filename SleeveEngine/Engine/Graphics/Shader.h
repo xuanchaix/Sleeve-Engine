@@ -10,8 +10,7 @@ struct UniformBufferBinding;
 
 class Shader {
 public:
-	void UpdateDescriptorSets( Legacy_EntityUniformBuffers const& uniformBuffers );
-	void UpdateDescriptorSets( UniformBufferBinding const& binding );
+	void UpdateDescriptorSets( UniformBufferBinding const& uniformBufferBinding, TextureBinding const& textureBinding );
 
 protected:
 	friend class Renderer;
@@ -33,7 +32,6 @@ protected:
 	std::string m_name;
 	VkDevice m_device;
 	Renderer* m_renderer;
-	Texture* m_texture;
 	VkDescriptorSetLayout m_descriptorSetLayout;
 	VkPipelineLayout m_pipelineLayout;
 	VkPipeline m_graphicsPipeline;

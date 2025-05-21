@@ -9,21 +9,29 @@ struct EulerAngles {
 	T pitch = T{};
 	T roll = T{};
 
+	EulerAngles() = default;
+	explicit EulerAngles( T in_yaw, T in_pitch, T in_roll ) noexcept;
+
 	/// Get the rotation matrix that this Euler angle is pointing to
-	Mat4<T> GetMatrix() const;
+	Mat4<T> GetMatrix() const noexcept;
 	/// Get the inversed rotation matrix that this Euler angle is pointing to
-	Mat4<T> GetMatrixInversed() const;
+	Mat4<T> GetMatrixInversed() const noexcept;
 	/// Get the forward vector
-	Vector3<T> GetForwardVector() const;
+	Vector3<T> GetForwardVector() const noexcept;
 	/// Get the forward and left vector
-	void GetForwardAndLeftVector( Vector3<T>& forward, Vector3<T>& left ) const;
+	void GetForwardAndLeftVector( Vector3<T>& forward, Vector3<T>& left ) const noexcept;
 	/// Get the forward, left and up vector
-	void GetForwardAndLeftAndUpVector( Vector3<T>& forward, Vector3<T>& left, Vector3<T>& up ) const;
+	void GetForwardAndLeftAndUpVector( Vector3<T>& forward, Vector3<T>& left, Vector3<T>& up ) const noexcept;
 
 };
 
 template<FloatingPointType T>
-Vector3<T> EulerAngles<T>::GetForwardVector() const
+EulerAngles<T>::EulerAngles( T in_yaw, T in_pitch, T in_roll ) noexcept
+	:yaw(in_yaw), pitch(in_pitch), roll(in_roll)
+{}
+
+template<FloatingPointType T>
+Vector3<T> EulerAngles<T>::GetForwardVector() const noexcept
 {
 	Vector3<T> retVec;
 	float sy = SinDegrees( yaw );
@@ -38,7 +46,7 @@ Vector3<T> EulerAngles<T>::GetForwardVector() const
 }
 
 template<FloatingPointType T>
-void EulerAngles<T>::GetForwardAndLeftVector( Vector3<T>& forward, Vector3<T>& left ) const
+void EulerAngles<T>::GetForwardAndLeftVector( Vector3<T>& forward, Vector3<T>& left ) const noexcept
 {
 	float sy = SinDegrees( yaw );
 	float cy = CosDegrees( yaw );
@@ -57,7 +65,7 @@ void EulerAngles<T>::GetForwardAndLeftVector( Vector3<T>& forward, Vector3<T>& l
 }
 
 template<FloatingPointType T>
-void EulerAngles<T>::GetForwardAndLeftAndUpVector( Vector3<T>& forward, Vector3<T>& left, Vector3<T>& up ) const
+void EulerAngles<T>::GetForwardAndLeftAndUpVector( Vector3<T>& forward, Vector3<T>& left, Vector3<T>& up ) const noexcept
 {
 	float sy = SinDegrees( yaw );
 	float cy = CosDegrees( yaw );
@@ -80,7 +88,7 @@ void EulerAngles<T>::GetForwardAndLeftAndUpVector( Vector3<T>& forward, Vector3<
 }
 
 template<FloatingPointType T>
-Mat4<T> EulerAngles<T>::GetMatrix() const
+Mat4<T> EulerAngles<T>::GetMatrix() const noexcept
 {
 	Mat4<T> retMat = Mat4<T>();
 	float sy = SinDegrees( yaw );
@@ -105,7 +113,7 @@ Mat4<T> EulerAngles<T>::GetMatrix() const
 }
 
 template<FloatingPointType T>
-Mat4<T> EulerAngles<T>::GetMatrixInversed() const
+Mat4<T> EulerAngles<T>::GetMatrixInversed() const noexcept
 {
 	Mat4<T> retMat = Mat4<T>();
 	float sy = SinDegrees( yaw );

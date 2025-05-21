@@ -68,5 +68,17 @@ Mat44 OrthographicCamera::GetViewMatrix() const
 
 Mat44 OrthographicCamera::GetProjectionMatrix() const
 {
-	return Mat44();
+	float right = m_bounds.m_maxs.x;
+	float left = m_bounds.m_mins.x;
+	float top = m_bounds.m_maxs.y;
+	float bottom = m_bounds.m_mins.y;
+	Mat44 retMat;
+
+ 	retMat.m_values[Mat44::Ix] = 2.f / (right - left);
+ 	retMat.m_values[Mat44::Jy] = -2.f / (top - bottom);
+ 	retMat.m_values[Mat44::Kz] = -1.f / (m_near - m_far);
+ 	retMat.m_values[Mat44::Tx] = (left + right) / (left - right);
+ 	retMat.m_values[Mat44::Ty] = (top + bottom) / (top - bottom);
+ 	retMat.m_values[Mat44::Tz] = m_near / (m_near - m_far);
+	return retMat;
 }

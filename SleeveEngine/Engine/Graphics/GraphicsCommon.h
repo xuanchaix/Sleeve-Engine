@@ -7,6 +7,7 @@ class VertexBuffer;
 class IndexBuffer;
 class UniformBuffer;
 class StagingBuffer;
+class Texture;
 
 struct Legacy_EntityUniformBuffers {
 	std::vector<UniformBuffer*> m_uniformBuffersModel;
@@ -40,6 +41,10 @@ constexpr UniformBufferDataBindingFlags UNIFORM_BUFFER_USE_MODEL_CONSTANTS_BINDI
 struct UniformBufferBinding {
 	uint32_t m_flags = 0;
 	uint64_t m_modelUniformBufferOffset = 0;
+};
+
+struct TextureBinding {
+	Texture* m_texture;
 };
 
 struct BufferMemoryBlock {

@@ -84,6 +84,12 @@
     <ClCompile Include="..\..\ThirdParty\tinyfiledialogs\tinyfiledialogs.c">
       <Filter>ThirdParty\tinyfiledialogs</Filter>
     </ClCompile>
+    <ClCompile Include="Graphics\PrimitiveUtils.cpp">
+      <Filter>Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Graphics\Font.cpp">
+      <Filter>Graphics</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Math\Vec2.h">
@@ -184,6 +190,15 @@
     </ClInclude>
     <ClInclude Include="..\..\ThirdParty\tinyfiledialogs\tinyfiledialogs.h">
       <Filter>ThirdParty\tinyfiledialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\AABB2D.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\PrimitiveUtils.h">
+      <Filter>Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Graphics\Font.h">
+      <Filter>Graphics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

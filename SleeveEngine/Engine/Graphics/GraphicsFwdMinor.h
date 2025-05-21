@@ -3,6 +3,7 @@
 #include "Graphics/Camera.h"
 #include "Graphics/Vertex.h"
 #include "Graphics/GraphicsCommon.h"
+#include "Graphics/PrimitiveUtils.h"
 
 struct PerspectiveCamera;
 class IndexBuffer;

@@ -4,7 +4,7 @@
 #include "Engine/Window/Window.h"
 #include <vector>
 
-std::vector<Entity3D*> entities;
+std::vector<EntityBase*> entities;
 
 Game::~Game()
 {
@@ -12,6 +12,7 @@ Game::~Game()
 		delete entity;
 	}
 	delete m_gameDefault3DCamera;
+	delete m_gameDefault2DCamera;
 }
 
 void Game::Initialize()
@@ -25,11 +26,20 @@ void Game::Initialize()
 	m_gameDefault3DCamera->m_position = Vec3( 0.f, -1.f, 1.73f );
 	m_gameDefault3DCamera->m_orientation = Euler( 90.f, 60.f, 0.f );
 
+	m_gameDefault2DCamera = new OrthographicCamera();
+	m_gameDefault2DCamera->BeginPlay();
+	m_gameDefault2DCamera->m_near = 1.f;
+	m_gameDefault2DCamera->m_far = -1.f;
+	m_gameDefault2DCamera->m_bounds = AABB2( Vec2( 0.f, 0.f ), Vec2( 1600.f, 800.f ) );
+
 	for (int i = 0; i < 1000; ++i) {
 		Entity3D* newEntity = new Entity3D( Vec3( 0.f, 0.5f * (float)i, -0.5f * (float)i ) );
 		entities.push_back( newEntity );
 		newEntity->BeginPlay();
 	}
+	Entity3D* newEntity = new Entity3D( Vec3(), Euler(), true );
+	entities.push_back( newEntity );
+	newEntity->BeginPlay();
 }
 
 void Game::Update( float deltaSeconds )
@@ -67,4 +77,7 @@ void Game::Render() const
 		entity->Render();
 	}
 	g_theRenderer->EndCamera( m_gameDefault3DCamera );
+	g_theRenderer->BeginCamera( m_gameDefault2DCamera );
+	entities[entities.size() - 1]->Render();
+	g_theRenderer->EndCamera( m_gameDefault2DCamera );
 }

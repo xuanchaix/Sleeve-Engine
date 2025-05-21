@@ -7,6 +7,7 @@
 #include "Math/MatrixUtils.h"
 #include "Math/Matrix44.h"
 #include "Math/EulerAngles.h"
+#include "Math/AABB2D.h"
 
 using Vector2f = Vector2<float>;
 using Vector2d = Vector2<double>;
@@ -27,3 +28,7 @@ using Mat44 = Mat44f;
 using Eulerf = EulerAngles<float>;
 using Eulerd = EulerAngles<double>;
 using Euler = Eulerf;
+
+using AABB2d = AABB2D<double>;
+using AABB2f = AABB2D<float>;
+using AABB2 = AABB2f;

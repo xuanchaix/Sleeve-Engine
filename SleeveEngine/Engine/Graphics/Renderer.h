@@ -66,14 +66,14 @@ public:
 	void DrawIndexed( VertexBufferBinding const& vertexBinding, IndexBufferBinding const& indexBinding );
 
 	void BindShader( Shader* shader );
-	void BeginDrawCommands( Legacy_EntityUniformBuffers const& uniformBuffers );
-	void BeginDrawCommands( UniformBufferBinding const& binding );
+	void BeginDrawCommands( UniformBufferBinding const& uniformBufferBinding, TextureBinding const& textureBinding );
 
 	void UpdateUniformBuffer( UniformBuffer* uniformBuffer, void* newData, size_t dataSize );
 	void UpdateSharedModelUniformBuffer( UniformBufferBinding const& binding, void* newData, size_t dataSize );
 	uint32_t GetCurFrameNumber() const;
 
 	Texture* CreateTextureFromFile( std::string const& fileName );
+	Texture* CreateWhiteTexture();
 	//Texture* CreateTexture();
 	IndexBuffer* CreateIndexBuffer( void* indexData, uint64_t size, uint32_t indexCount );
 	VertexBuffer* CreateVertexBuffer( void* vertexData, uint64_t size, uint32_t vertexCount );
