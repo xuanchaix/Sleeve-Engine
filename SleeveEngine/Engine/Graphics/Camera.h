@@ -21,6 +21,9 @@ struct PerspectiveCamera : public Camera {
 	/// Get perspective projection matrix of the camera
 	virtual Mat44 GetProjectionMatrix() const;
 
+	Vec3 TransferScreenPosToWorld( Vec2 const& screenPos ) const;
+	Vec2 TransferScreenPosToZPlane( Vec2 const& normalizedScreenPos, float z ) const;
+
 	Euler m_orientation;
 	Vec3 m_position;
 

@@ -50,7 +50,7 @@ public:
 	/// Render will be called each frame
 	virtual void Render() const override;
 protected:
-	void CalculateModelMatrix( Mat44& modelMat );
+	virtual void CalculateModelMatrix( Mat44& modelMat );
 
 public:
 	// positions

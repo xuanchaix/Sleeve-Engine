@@ -3,6 +3,8 @@
 constexpr uint32_t PerFrameTextVertexCount = 36;
 constexpr uint32_t PerFrameTextDataSize = 36 * sizeof( VertexPCU3D );
 
+
+
 Card::Card( CardDefinition const& def, Vec3 const& position /*= Vec3()*/, Euler const& orientation /*= Euler()*/ )
 	:Entity3D(position, orientation, false), m_def(def)
 {
@@ -10,16 +12,17 @@ Card::Card( CardDefinition const& def, Vec3 const& position /*= Vec3()*/, Euler 
 
 Card::~Card()
 {
+	g_theRenderer->ReturnMemoryToSharedBuffer( m_UIBinding );
 	g_theRenderer->ReturnMemoryToSharedBuffer( m_vertexBufferBinding, m_indexBufferBinding, m_uniformBufferBinding );
 	g_theRenderer->DeferredDestroyBuffer( m_textVertexBufferBinding.m_vertexBuffer, false );
 }
 
 void Card::BeginPlay()
 {
-	m_vertices = { {Vec3{-33.f, -45.f, 0.0f}, Rgba8{255, 255, 255, 255}, Vec2{0.0f, 0.0f}},
-				{Vec3{33.f, -45.f, 0.0f}, Rgba8{255, 255, 255, 255}, Vec2{1.0f, 0.0f}},
-				{Vec3{33.f, 45.f, 0.0f}, Rgba8{255, 255, 255, 255}, Vec2{1.0f, 1.0f}},
-				{Vec3{-33.f, 45.f, 0.0f}, Rgba8{255, 255, 255, 255}, Vec2{0.0f, 1.0f}}, };
+	m_vertices = { {Vec3{-CardWidth * 0.5f, -CardHeight * 0.5f, 0.0f}, Rgba8{255, 255, 255, 255}, Vec2{0.0f, 0.0f}},
+				{Vec3{CardWidth * 0.5f, -CardHeight * 0.5f, 0.0f}, Rgba8{255, 255, 255, 255}, Vec2{1.0f, 0.0f}},
+				{Vec3{CardWidth * 0.5f, CardHeight * 0.5f, 0.0f}, Rgba8{255, 255, 255, 255}, Vec2{1.0f, 1.0f}},
+				{Vec3{-CardWidth * 0.5f, CardHeight * 0.5f, 0.0f}, Rgba8{255, 255, 255, 255}, Vec2{0.0f, 1.0f}}, };
 	m_indices = { 0, 1, 2, 2, 3, 0, };
 	m_useIndexBuffer = true;
 	// initialize rendering objects
@@ -37,6 +40,7 @@ void Card::BeginPlay()
 
 	// initialize uniform buffers
 	m_uniformBufferBinding = g_theRenderer->AddDataToSharedUniformBuffer( UNIFORM_BUFFER_USE_MODEL_CONSTANTS_BINDING_2 );
+	m_UIBinding = g_theRenderer->AddDataToSharedUniformBuffer( UNIFORM_BUFFER_USE_MODEL_CONSTANTS_BINDING_2 );
 
 	m_shader = g_theResourceManager->GetOrLoadShader( "shader" );
 
@@ -47,8 +51,16 @@ void Card::BeginPlay()
 
 void Card::Update( float deltaSeconds )
 {
+	if (m_isHovering) {
+		m_hoveringTimer += deltaSeconds;
+	}
+	else {
+		m_hoveringTimer = 0.f;
+	}
+
 	CalculateModelMatrix( m_modelMatrix );
 
+	// update the text(health, damage, cool down)
 	m_textVerts.clear();
 	if (!m_inBattleLine) {
 		g_defaultFont->AddVertsForText2D( m_textVerts, std::to_string( m_curCoolDown ), Vec2( -32.f, 31.f ), Rgba8( 0, 0, 0 ), 20.f, 1.f );
@@ -75,12 +87,14 @@ void Card::Update( float deltaSeconds )
 	m_textVertexBufferBinding.m_vertexBufferVertexCount = (uint32_t)m_textVerts.size();
 	uint32_t frameIndex = g_theRenderer->GetCurFrameNumber();
 	uint32_t offset = frameIndex * PerFrameTextDataSize;
-	memcpy((char*)m_textVertexBufferBinding.m_vertexBuffer->m_mappedData + offset, m_textVerts.data(), m_textVertexBufferBinding.m_vertexBufferVertexCount * sizeof(VertexPCU3D));
+	g_theRenderer->CopyDataToVertexBufferThroughStagingBuffer( m_textVerts.data(), m_textVertexBufferBinding.m_vertexBufferVertexCount * sizeof( VertexPCU3D ), m_textVertexBufferBinding.m_vertexBuffer, offset );
+	//memcpy((char*)m_textVertexBufferBinding.m_vertexBuffer->m_mappedData + offset, m_textVerts.data(), m_textVertexBufferBinding.m_vertexBufferVertexCount * sizeof(VertexPCU3D));
 	m_textVertexBufferBinding.m_vertexBufferOffset = offset;
 }
 
 void Card::Render() const
 {
+	// -------------------------------Draw Card-----------------------------------
 	// if the current pipeline is not my shader's pipeline, bind my shader's pipeline
 	g_theRenderer->BindShader( m_shader );
 	// acquire and set the descriptor set for this specific entity
@@ -97,13 +111,27 @@ void Card::Render() const
 	}
 
 	// ----------------------------------Draw texts--------------------------------
-	// if the current pipeline is not my shader's pipeline, bind my shader's pipeline
-	g_theRenderer->BindShader( m_shader );
 	// acquire and set the descriptor set for this specific entity
 	g_theRenderer->BeginDrawCommands( m_uniformBufferBinding, m_fontTextureBinding );
-	// copy the ubo data to the graphics card
-	g_theRenderer->UpdateSharedModelUniformBuffer( m_uniformBufferBinding, (void*)&m_modelMatrix, sizeof( m_modelMatrix ) );
 	g_theRenderer->Draw( m_textVertexBufferBinding );
+
+	//-----------------------------------Hovering: show as UI----------------------
+	if (m_isHovering) {
+		// acquire and set the descriptor set for this specific entity
+		g_theRenderer->BeginDrawCommands( m_UIBinding, m_textureBinding );
+		// copy the ubo data to the graphics card
+		g_theRenderer->UpdateSharedModelUniformBuffer( m_UIBinding, (void*)&m_UIMatrix, sizeof( m_UIMatrix ) );
+		if (m_useIndexBuffer) {
+			// draw the entity
+			g_theRenderer->DrawIndexed( m_vertexBufferBinding, m_indexBufferBinding );
+		}
+		else {
+			// draw the entity
+			g_theRenderer->Draw( m_vertexBufferBinding );
+		}
+		g_theRenderer->BeginDrawCommands( m_UIBinding, m_fontTextureBinding );
+		g_theRenderer->Draw( m_textVertexBufferBinding );
+	}
 }
 
 uint32_t Card::GetDamage( int damage )
@@ -113,6 +141,22 @@ uint32_t Card::GetDamage( int damage )
 		m_curHealth = 0;
 	}
 	return 0;
+}
+
+void Card::CalculateModelMatrix( Mat44& modelMat )
+{
+	modelMat = Mat44( Vec3( 1.f, 0.f, 0.f ), Vec3( 0.f, 1.f, 0.f ), Vec3( 0.f, 0.f, 1.f ), m_position );
+	modelMat.Append( m_orientation.GetMatrix() );
+	if (m_isHovering) {
+		modelMat.Append( Mat44( Vec3( 1.06f, 0.f, 0.f ), Vec3( 0.f, 1.06f, 0.f ), Vec3( 0.f, 0.f, 1.06f ), Vec3( 0.f, 0.f, 0.f ) ) );
+	}
+
+	constexpr float startAngle = -30.f;
+	constexpr float maxShowingTime = 0.35f;
+	float rollAngle = RangeMapClamped( m_hoveringTimer, 0.f, maxShowingTime, startAngle, 0.f );
+	Vec3 centerPos = Vec3( 160.f, 0.f, 200.f ) + Vec3( -CosDegrees( rollAngle ), 0.f, SinDegrees( rollAngle ) ) * CardWidth * 0.5f;
+	m_UIMatrix = Mat44( Vec3( 1.f, 0.f, 0.f ), Vec3( 0.f, 1.f, 0.f ), Vec3( 0.f, 0.f, 1.f ), centerPos );
+	m_UIMatrix.Append( Euler( 0.f, rollAngle, 0.f ).GetMatrix() );
 }
 
 CardDefinition::CardDefinition()

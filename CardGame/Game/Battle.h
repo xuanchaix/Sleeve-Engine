@@ -24,6 +24,10 @@ public:
 	void RemoveDeadCards( bool isSelf );
 	void UpdateCardPosition();
 
+protected:
+	void HandleMouseInput();
+
+public:
 	bool m_readyToPerformNextStep = false;
 	float m_timer = 0.f;
 	uint32_t m_turnCounter = 1;

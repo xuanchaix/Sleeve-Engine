@@ -169,6 +169,14 @@ void Renderer::BeginFrame()
 
 void Renderer::EndFrame()
 {
+// 	VkBufferMemoryBarrier barrier{};
+// 	barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+// 	barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+// 	barrier.dstAccessMask = VK_ACCESS_UNIFORM_READ_BIT;
+// 	barrier.buffer = m_sharedModelUniformBuffers[m_currentFrame]->m_buffer;
+// 	barrier.size = VK_WHOLE_SIZE;
+// 	vkCmdPipelineBarrier( m_commandBuffers[m_currentFrame], VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0, nullptr, 1, &barrier, 0, nullptr );
+
 	vkCmdEndRenderPass( m_commandBuffers[m_currentFrame] );
 
 	ASSERT_OR_ERROR( vkEndCommandBuffer( m_commandBuffers[m_currentFrame] ) == VK_SUCCESS, "failed to record command buffer!" );
@@ -197,7 +205,7 @@ void Renderer::EndFrame()
 	transferQueueSubmitInfo.pSignalSemaphores = &m_transferCompleteSemaphores[m_currentFrame];
 
 	vkQueueSubmit( m_transferQueue, 1, &transferQueueSubmitInfo, m_transferFences[m_currentFrame]);
-
+	
 	VkSubmitInfo graphicsQueueSubmitInfo{};
 	graphicsQueueSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -234,6 +242,7 @@ void Renderer::EndFrame()
 		THROW_ERROR( "failed to present swap chain image!" );
 	}
 
+	// destroy pending buffers
 	auto it = m_pendingDestroyBuffers.begin();
 	while (it != m_pendingDestroyBuffers.end()) {
 		if ((it->m_isTransfer && vkGetFenceStatus( m_device, m_transferFences[m_currentFrame] ) == VK_SUCCESS)
@@ -296,9 +305,9 @@ void Renderer::CreateInstance()
 
 	VkApplicationInfo appInfo{};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-	appInfo.pApplicationName = "Hello Triangle";
+	appInfo.pApplicationName = "";
 	appInfo.applicationVersion = VK_MAKE_VERSION( 1, 0, 0 );
-	appInfo.pEngineName = "No Engine";
+	appInfo.pEngineName = "Sleeve Engine";
 	appInfo.engineVersion = VK_MAKE_VERSION( 1, 0, 0 );
 	appInfo.apiVersion = VK_API_VERSION_1_0;
 
@@ -1252,16 +1261,51 @@ void Renderer::ReturnMemoryToSharedBuffer( VertexBufferBinding const& vBinding, 
 	}
 }
 
+void Renderer::ReturnMemoryToSharedBuffer( VertexBufferBinding const& vBinding )
+{
+	vBinding.m_vertexBuffer->ReturnMemory( vBinding.m_vertexBufferOffset, vBinding.m_vertexBufferVertexCount * vBinding.m_vertexBuffer->m_stride );
+}
+
+void Renderer::ReturnMemoryToSharedBuffer( UniformBufferBinding const& uBinding )
+{
+	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+		m_sharedModelUniformBuffers[i]->ReturnMemory( uBinding.m_modelUniformBufferOffset, sizeof( ModelUniformBufferObject ) );
+	}
+}
+
+void Renderer::ReturnMemoryToSharedBuffer( IndexBufferBinding const& iBinding )
+{
+	iBinding.m_indexBuffer->ReturnMemory( iBinding.m_indexBufferOffset, iBinding.m_indexBufferIndexCount * sizeof( uint16_t ) );
+}
+
 VertexBuffer* Renderer::CreateDynamicVertexBuffer( uint64_t size )
 {
 	VkDeviceSize bufferSize = size;
 
 	VertexBuffer* vertexBuffer = new VertexBuffer( m_device, size );
 	vertexBuffer->m_stride = 0;
-	CreateBuffer( bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, vertexBuffer->m_buffer, vertexBuffer->m_deviceMemory );
-	vkMapMemory( m_device, vertexBuffer->m_deviceMemory, 0, bufferSize, 0, &vertexBuffer->m_mappedData );
+	CreateBuffer( bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer->m_buffer, vertexBuffer->m_deviceMemory );
+	//vkMapMemory( m_device, vertexBuffer->m_deviceMemory, 0, bufferSize, 0, &vertexBuffer->m_mappedData );
 
 	return vertexBuffer;
+}
+
+void Renderer::CopyDataToVertexBufferThroughStagingBuffer( void* buffer, uint64_t size, VertexBuffer* vertexBuffer, uint64_t dstOffset )
+{
+	if (size == 0) {
+		return;
+	}
+	// get a space in staging buffer
+	VkDeviceSize stagingOffset;
+	if (!m_stagingBuffers[m_currentFrame]->FindProperPositionForSizeInBuffer( stagingOffset, size )) {
+		// Error!
+		THROW_ERROR( "Staging buffer is not big enough!" );
+	}
+	// copy the data to the staging buffer
+	memcpy( (void*)((VkDeviceSize)m_stagingBuffers[m_currentFrame]->m_mappedData + stagingOffset), buffer, (size_t)size );
+
+	// copy the data from staging buffer to the buffer
+	CopyBuffer( m_stagingBuffers[m_currentFrame]->m_stagingBuffer, vertexBuffer->m_buffer, size, stagingOffset, dstOffset );
 }
 
 void Renderer::CleanupSwapChain()

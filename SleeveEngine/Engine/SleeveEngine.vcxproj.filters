@@ -28,6 +28,9 @@
     <Filter Include="ThirdParty\tinyxml2">
       <UniqueIdentifier>{11de3fc9-3275-429b-8d75-8484b7595fe7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="UI">
+      <UniqueIdentifier>{ddc26e5f-d7db-422f-8662-093e10dd6772}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Graphics\Camera.cpp">
@@ -101,6 +104,18 @@
     </ClCompile>
     <ClCompile Include="Core\StringUtils.cpp">
       <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\UISystem.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\Widget.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\Button.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\Image.cpp">
+      <Filter>UI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -220,6 +235,18 @@
     </ClInclude>
     <ClInclude Include="Core\StringUtils.h">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\UISystem.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\Widget.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\Button.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\Image.h">
+      <Filter>UI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

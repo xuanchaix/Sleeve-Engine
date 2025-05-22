@@ -1,5 +1,6 @@
 #include "Game/Battle.h"
 #include "Game/Cards/Card.h"
+#include "Game/Frameworks/Game.h"
 
 Battle::Battle( EnemyInfo const& enemyInfo )
 {
@@ -124,6 +125,8 @@ void Battle::PerformNextStep()
 
 void Battle::Update( float deltaSeconds )
 {
+	HandleMouseInput();
+
 	if (m_battleState == BattleState::SelfStartTurn) {
 		m_timer += deltaSeconds;
 		if (m_timer > 0.3f) {
@@ -324,38 +327,74 @@ void Battle::RemoveDeadCards( bool isSelf )
 	}
 }
 
+constexpr float cardsInBattleLineHeight = 0.f;
+constexpr float cardsInHandsHeight = 30.f;
+
 void Battle::UpdateCardPosition()
 {
 	for (size_t i = 0; i < m_myCardsInBattleLine.size(); ++i) {
 		Card* card = m_myCardsInBattleLine[i];
-		card->m_position = Vec3( -290.f + i * 72.f, -50.f, 0.f );
+		Vec2 centerPos = Vec2( -290.f + i * 72.f, -50.f );
+		card->m_cardBounds2D = AABB2( centerPos - Vec2( CardWidth * 0.5f, CardHeight * 0.5f ), centerPos + Vec2( CardWidth * 0.5f, CardHeight * 0.5f ) );
+		card->m_position = Vec3( -290.f + i * 72.f, -50.f, cardsInBattleLineHeight );
 	}
 	for (size_t i = 0; i < m_enemyCardsInBattleLine.size(); ++i) {
 		Card* card = m_enemyCardsInBattleLine[i];
-		card->m_position = Vec3( -290.f + i * 72.f, 50.f, 0.f );
+		Vec2 centerPos = Vec2( -290.f + i * 72.f, 50.f );
+		card->m_cardBounds2D = AABB2( centerPos - Vec2( CardWidth * 0.5f, CardHeight * 0.5f ), centerPos + Vec2( CardWidth * 0.5f, CardHeight * 0.5f ) );
+		card->m_position = Vec3( -290.f + i * 72.f, 50.f, cardsInBattleLineHeight );
 	}
 	for (size_t i = 0; i < m_myCardsInWaitingList.size(); ++i) {
 		Card* card = m_myCardsInWaitingList[i];
-		card->m_position = Vec3( -255.f + i * 72.f, -140.f, 30.f );
+		Vec2 centerPos = Vec2( -255.f + i * 72.f, -140.f );
+		card->m_cardBounds2D = AABB2( centerPos - Vec2( CardWidth * 0.5f, CardHeight * 0.5f ), centerPos + Vec2( CardWidth * 0.5f, CardHeight * 0.5f ) );
+		card->m_position = Vec3( -255.f + i * 72.f, -140.f, cardsInHandsHeight );
 	}
 	for (size_t i = 0; i < m_enemyCardsInWaitingList.size(); ++i) {
 		Card* card = m_enemyCardsInWaitingList[i];
-		card->m_position = Vec3( -255.f + i * 72.f, 140.f, 30.f );
+		Vec2 centerPos = Vec2( -255.f + i * 72.f, 140.f );
+		card->m_cardBounds2D = AABB2( centerPos - Vec2( CardWidth * 0.5f, CardHeight * 0.5f ), centerPos + Vec2( CardWidth * 0.5f, CardHeight * 0.5f ) );
+		card->m_position = Vec3( -255.f + i * 72.f, 140.f, cardsInHandsHeight );
 	}
-// 
-// 	Card* newEntity = new Card( Vec3( -290.f, 50.f, 0.f ) );
-// 	entities.push_back( newEntity );
-// 	newEntity->BeginPlay();
-// 	newEntity = new Card(  );
-// 	entities.push_back( newEntity );
-// 	newEntity->BeginPlay();
-// 
-// 	newEntity = new Card( Vec3( -255.f, -140.f, 30.f ) );
-// 	entities.push_back( newEntity );
-// 	newEntity->BeginPlay();
-// 
-// 	newEntity = new Card( Vec3( -255.f, 140.f, 30.f ) );
-// 	entities.push_back( newEntity );
-// 	newEntity->BeginPlay();
+}
+
+void Battle::HandleMouseInput()
+{
+	Vec2 normalizedCursorPos = g_theInput->GetCursorNormalizedScreenPos();
+	Vec2 mousePosInBattleLine = g_theGame->m_gameDefault3DCamera->TransferScreenPosToZPlane( normalizedCursorPos, cardsInBattleLineHeight );
+	Vec2 mousePosInHands = g_theGame->m_gameDefault3DCamera->TransferScreenPosToZPlane( normalizedCursorPos, cardsInHandsHeight );
+
+	for (auto card : m_myCardsInBattleLine) {
+		if (card->m_cardBounds2D.IsPointInside( mousePosInBattleLine )) {
+			card->m_isHovering = true;
+		}
+		else {
+			card->m_isHovering = false;
+		}
+	}
+	for (auto card : m_enemyCardsInBattleLine) {
+		if (card->m_cardBounds2D.IsPointInside( mousePosInBattleLine )) {
+			card->m_isHovering = true;
+		}
+		else {
+			card->m_isHovering = false;
+		}
+	}
+	for (auto card : m_myCardsInWaitingList) {
+		if (card->m_cardBounds2D.IsPointInside( mousePosInHands )) {
+			card->m_isHovering = true;
+		}
+		else {
+			card->m_isHovering = false;
+		}
+	}
+	for (auto card : m_enemyCardsInWaitingList) {
+		if (card->m_cardBounds2D.IsPointInside( mousePosInHands )) {
+			card->m_isHovering = true;
+		}
+		else {
+			card->m_isHovering = false;
+		}
+	}
 }
 

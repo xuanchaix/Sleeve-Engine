@@ -142,4 +142,39 @@ T GetProjectedLength2D( Vector2<T> const& vectorToProject, Vector2<T> const& vec
 template<FloatingPointType T>
 Vector2<T> GetProjectedOnto2D( Vector2<T> const& vectorToProject, Vector2<T> const& vectorToProjectOnto );
 
+///
+template<FloatingPointType T>
+T SmoothStart2( T t );
+///
+template<FloatingPointType T>
+T SmoothStart3( T t );
+///
+template<FloatingPointType T>
+T SmoothStart4( T t );
+///
+template<FloatingPointType T>
+T SmoothStart5( T t );
+///
+template<FloatingPointType T>
+T SmoothStart6( T t );
+///
+template<FloatingPointType T>
+T SmoothStop2( T t );
+///
+float SmoothStop3( float t );
+///
+float SmoothStop4( float t );
+///
+float SmoothStop5( float t );
+///
+float SmoothStop6( float t );
+///
+float SmoothStep3( float t );
+///
+float SmoothStep5( float t );
+///
+float Hesitate3( float t );
+///
+float Hesitate5( float t );
+
 #include "MathUtils.inl"

@@ -26,6 +26,8 @@ void InputSystem::BeginFrame()
 	glfwGetCursorPos( g_mainWindow->GetGLFWWindow(), &xPos, &yPos );
 	Vec2 thisFramePos = Vec2( (float)xPos, (float)yPos );
 
+	Vec2 windowSize = g_mainWindow->GetWindowSize();
+
 	if (g_mainWindow->GetCursorInputMode() == CursorInputMode::OFFSET) {
 		if (m_skipCursorDeltaOffsetThisFrame) {
 			m_skipCursorDeltaOffsetThisFrame = false;
@@ -33,13 +35,14 @@ void InputSystem::BeginFrame()
 		}
 		else {
 			g_theInput->m_cursorPosDeltaOffset = thisFramePos - g_theInput->m_cursorPosThisFrame;
-			g_theInput->m_cursorPosDeltaOffset /= g_mainWindow->GetWindowSize();
+			g_theInput->m_cursorPosDeltaOffset /= windowSize;
 		}
 	}
 	else {
 		g_theInput->m_cursorPosDeltaOffset = Vec2();
 	}
 	m_cursorPosThisFrame = thisFramePos;
+	m_normalizedCursorPosThisFrame = Vec2( m_cursorPosThisFrame.x / windowSize.x, 1.f - m_cursorPosThisFrame.y / windowSize.y );
 }
 
 void InputSystem::EndFrame()
@@ -71,7 +74,7 @@ Vec2 InputSystem::GetCursorNormalizedOffset() const
 
 Vec2 InputSystem::GetCursorNormalizedScreenPos() const
 {
-	return Vec2();
+	return m_normalizedCursorPosThisFrame;
 }
 
 void InputSystem::KeyCallback( GLFWwindow* window, int key, int scanCode, int action, int mods )

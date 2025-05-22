@@ -67,8 +67,8 @@ struct BufferPendingToDestroy {
 	int m_destroyCount = 0;
 };
 
-constexpr uint32_t WINDOW_WIDTH = 1600;
-constexpr uint32_t WINDOW_HEIGHT = 800;
+constexpr uint32_t WINDOW_WIDTH = 2000;
+constexpr uint32_t WINDOW_HEIGHT = 1000;
 constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 constexpr uint64_t INITIAL_SHARED_VERTEX_BUFFER_MAX_SIZE = 1000000; // around 1MB
 constexpr uint64_t INITIAL_SHARED_INDEX_BUFFER_MAX_SIZE = 100000; // around 100KB

@@ -131,5 +131,6 @@ public:
 	KeyState m_keyStates[KEY_NUM];
 	Vec2 m_cursorPosDeltaOffset;
 	Vec2 m_cursorPosThisFrame;
+	Vec2 m_normalizedCursorPosThisFrame;
 	bool m_skipCursorDeltaOffsetThisFrame = true;
 };

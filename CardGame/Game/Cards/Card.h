@@ -3,6 +3,9 @@
 #include "Game/Frameworks/GameCommon.h"
 #include "Engine/Core/XmlUtils.h"
 
+constexpr float CardWidth = 66.f;
+constexpr float CardHeight = 90.f;
+
 enum class CardRarity {
 	Beginning, Common, Rare, Legendary,
 };
@@ -42,12 +45,21 @@ public:
 
 	uint32_t GetDamage( int damage );
 
+protected:
+	virtual void CalculateModelMatrix( Mat44& modelMat );
+public:
+
 	CardDefinition const& m_def;
 	int m_curDamage = 1;
 	int m_curHealth = 5;
 	int m_curCoolDown = 2;
+	float m_hoveringTimer = 0.f;
 	bool m_inBattleLine = false;
+	bool m_isHovering = false;
+	AABB2 m_cardBounds2D;
 	std::vector<VertexPCU3D> m_textVerts;
 	VertexBufferBinding m_textVertexBufferBinding;
 	TextureBinding m_fontTextureBinding;
+	UniformBufferBinding m_UIBinding;
+	Mat44 m_UIMatrix;
 };

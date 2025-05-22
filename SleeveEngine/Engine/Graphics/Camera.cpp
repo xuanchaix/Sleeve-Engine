@@ -41,6 +41,26 @@ Mat44 PerspectiveCamera::GetProjectionMatrix() const
 	return ::GetPerspectiveMatrix( m_fov, m_aspect, m_zNear, m_zFar );
 }
 
+Vec3 PerspectiveCamera::TransferScreenPosToWorld( Vec2 const& screenPos ) const
+{
+	// make sure this is normalized to 0-1
+	Vec3 iBasis, jBasis, kBasis;
+	m_orientation.GetForwardAndLeftAndUpVector( iBasis, jBasis, kBasis );
+	Vec3 worldPos = m_position + iBasis * m_zNear;
+	float h = 2.f * m_zNear * SinDegrees( m_fov * 0.5f ) / CosDegrees( m_fov * 0.5f );
+	float w = h * m_aspect;
+	worldPos -= jBasis * (screenPos.x - 0.5f) * w;
+	worldPos += kBasis * (screenPos.y - 0.5f) * h;
+	return worldPos;
+}
+
+Vec2 PerspectiveCamera::TransferScreenPosToZPlane( Vec2 const& normalizedScreenPos, float z ) const
+{
+	Vec3 worldPos = TransferScreenPosToWorld( normalizedScreenPos );
+	float zeroPlaneFraction = GetFractionWithinRange( z, m_position.z, worldPos.z );
+	return Interpolate( m_position, worldPos, zeroPlaneFraction );
+}
+
 OrthographicCamera::OrthographicCamera()
 {
 

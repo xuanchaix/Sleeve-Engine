@@ -291,3 +291,26 @@ Vector2<T> GetProjectedOnto2D( Vector2<T> const& vectorToProject, Vector2<T> con
 	return normal * DotProduct2D( vectorToProject, normal );
 }
 
+template<FloatingPointType T>
+T SmoothStart2( T t )
+{
+
+}
+
+template<FloatingPointType T>
+T SmoothStart3( T t )
+{
+
+}
+
+template<FloatingPointType T>
+T SmoothStart4( T t )
+{
+
+}
+
+template<FloatingPointType T>
+T SmoothStart5( T t )
+{
+
+}
