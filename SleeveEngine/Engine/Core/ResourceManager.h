@@ -14,6 +14,7 @@ public:
 	Texture* GetOrLoadTexture( std::string const& path );
 	Texture* GetWhiteTexture();
 	Shader* GetOrLoadShader( std::string const& shaderName );
+	Font* GetOrLoadFont( std::string const& path );
 
 protected:
 	Texture* m_whiteTexture = nullptr;

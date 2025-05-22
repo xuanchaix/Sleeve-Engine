@@ -25,6 +25,9 @@
     <Filter Include="ThirdParty\tinyfiledialogs">
       <UniqueIdentifier>{8fcf43f9-6796-42ba-ac50-fcc7ebc50eec}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ThirdParty\tinyxml2">
+      <UniqueIdentifier>{11de3fc9-3275-429b-8d75-8484b7595fe7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Graphics\Camera.cpp">
@@ -89,6 +92,15 @@
     </ClCompile>
     <ClCompile Include="Graphics\Font.cpp">
       <Filter>Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\XmlUtils.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\ThirdParty\tinyxml2\tinyxml2.cpp">
+      <Filter>ThirdParty\tinyxml2</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\StringUtils.cpp">
+      <Filter>Core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -199,6 +211,15 @@
     </ClInclude>
     <ClInclude Include="Graphics\Font.h">
       <Filter>Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\XmlUtils.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\ThirdParty\tinyxml2\tinyxml2.h">
+      <Filter>ThirdParty\tinyxml2</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\StringUtils.h">
+      <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

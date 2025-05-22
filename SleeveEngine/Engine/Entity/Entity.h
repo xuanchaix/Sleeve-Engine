@@ -19,11 +19,11 @@ public:
 	Entity2D( Vec2 const& position = Vec2(), float orientation = 0.f );
 	~Entity2D();
 	/// Begin play will be called right after an entity is created
-	void BeginPlay() override;
+	virtual void BeginPlay() override;
 	/// Update will be called each frame
-	void Update( float deltaSeconds ) override;
+	virtual void Update( float deltaSeconds ) override;
 	/// Render will be called each frame
-	void Render() const override;
+	virtual void Render() const override;
 protected:
 	// positions
 	Vec2 m_position;
@@ -44,18 +44,19 @@ public:
 	Entity3D( Vec3 const& position = Vec3(), Euler const& orientation = Euler(), bool isTest = false );
 	~Entity3D();
 	/// Begin play will be called right after an entity is created
-	void BeginPlay() override;
+	virtual void BeginPlay() override;
 	/// Update will be called each frame
-	void Update( float deltaSeconds ) override;
+	virtual void Update( float deltaSeconds ) override;
 	/// Render will be called each frame
-	void Render() const override;
+	virtual void Render() const override;
 protected:
 	void CalculateModelMatrix( Mat44& modelMat );
-protected:
+
+public:
 	// positions
 	Vec3 m_position;
 	Euler m_orientation;
-
+protected:
 	// render variables
 	VertexBufferBinding m_vertexBufferBinding;
 	IndexBufferBinding m_indexBufferBinding;

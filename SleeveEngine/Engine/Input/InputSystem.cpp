@@ -69,6 +69,11 @@ Vec2 InputSystem::GetCursorNormalizedOffset() const
 	return m_cursorPosDeltaOffset;
 }
 
+Vec2 InputSystem::GetCursorNormalizedScreenPos() const
+{
+	return Vec2();
+}
+
 void InputSystem::KeyCallback( GLFWwindow* window, int key, int scanCode, int action, int mods )
 {
 	if (action == GLFW_PRESS) {

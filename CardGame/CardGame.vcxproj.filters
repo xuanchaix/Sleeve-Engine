@@ -4,30 +4,56 @@
     <Filter Include="Frameworks">
       <UniqueIdentifier>{c8d1b73b-e088-4758-baf4-0c7e59d30d56}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Cards">
+      <UniqueIdentifier>{99787949-fd1e-43e9-a2c8-77593f290b0b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game">
+      <UniqueIdentifier>{00b9ed64-9dbe-40f1-8aed-c770e69e1035}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Enemy">
+      <UniqueIdentifier>{17808a0f-f104-4493-bf83-ef15cf293a1c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Definitions">
+      <UniqueIdentifier>{61324bb8-a99c-4034-b157-15e9dae29e40}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Frameworks\main.cpp">
+    <ClCompile Include="Game\Frameworks\GameCommon.cpp" />
+    <ClCompile Include="Game\Frameworks\main.cpp" />
+    <ClCompile Include="Game\Frameworks\App.cpp">
       <Filter>Frameworks</Filter>
     </ClCompile>
-    <ClCompile Include="Frameworks\GameCommon.cpp">
+    <ClCompile Include="Game\Frameworks\Game.cpp">
       <Filter>Frameworks</Filter>
     </ClCompile>
-    <ClCompile Include="Frameworks\App.cpp">
-      <Filter>Frameworks</Filter>
+    <ClCompile Include="Game\Cards\Card.cpp">
+      <Filter>Cards</Filter>
     </ClCompile>
-    <ClCompile Include="Frameworks\Game.cpp">
-      <Filter>Frameworks</Filter>
+    <ClCompile Include="Game\Battle.cpp">
+      <Filter>Game</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Frameworks\GameCommon.h">
+    <ClInclude Include="Game\Frameworks\GameCommon.h" />
+    <ClInclude Include="Game\Frameworks\App.h">
       <Filter>Frameworks</Filter>
     </ClInclude>
-    <ClInclude Include="Frameworks\App.h">
+    <ClInclude Include="Game\Frameworks\Game.h">
       <Filter>Frameworks</Filter>
     </ClInclude>
-    <ClInclude Include="Frameworks\Game.h">
-      <Filter>Frameworks</Filter>
+    <ClInclude Include="Game\Cards\Card.h">
+      <Filter>Cards</Filter>
     </ClInclude>
+    <ClInclude Include="Game\Battle.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\EnemyInfo.h">
+      <Filter>Enemy</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="Run\Data\Definitions\CardDefinition.xml">
+      <Filter>Definitions</Filter>
+    </Xml>
   </ItemGroup>
 </Project>

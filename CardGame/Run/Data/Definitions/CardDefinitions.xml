@@ -1,0 +1,7 @@
+<CardDefinitions>
+	<CardDefinition name="Elf Warrior" damage="2" health="3" coolDown="3" description="" effect="" rarity="Beginning">
+		<Attributes>
+			<Attribute name="Elf"/>
+		</Attributes>
+	</CardDefinition>
+</CardDefinitions>

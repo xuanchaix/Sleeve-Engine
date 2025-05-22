@@ -63,6 +63,8 @@ struct BufferCopyCommand {
 struct BufferPendingToDestroy {
 	VkBuffer m_buffer;
 	VkDeviceMemory m_deviceMemory;
+	bool m_isTransfer = true;
+	int m_destroyCount = 0;
 };
 
 constexpr uint32_t WINDOW_WIDTH = 1600;

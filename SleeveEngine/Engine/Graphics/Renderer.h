@@ -73,6 +73,7 @@ public:
 	uint32_t GetCurFrameNumber() const;
 
 	Texture* CreateTextureFromFile( std::string const& fileName );
+	Texture* CreateTextureFromBuffer( unsigned char const* buffer, uint64_t size, uint32_t width, uint32_t height );
 	Texture* CreateWhiteTexture();
 	//Texture* CreateTexture();
 	IndexBuffer* CreateIndexBuffer( void* indexData, uint64_t size, uint32_t indexCount );
@@ -85,11 +86,13 @@ public:
 	UniformBufferBinding AddDataToSharedUniformBuffer( UniformBufferDataBindingFlags flags );
 	void ReturnMemoryToSharedBuffer( VertexBufferBinding const& vBinding, IndexBufferBinding const& iBinding, UniformBufferBinding const& uBinding );
 
+	VertexBuffer* CreateDynamicVertexBuffer( uint64_t size );
+
+	void DeferredDestroyBuffer( UniformBuffer* buffer, bool isTransfer );
+	void DeferredDestroyBuffer( VertexBuffer* buffer, bool isTransfer );
+	void DeferredDestroyBuffer( IndexBuffer* buffer, bool isTransfer );
+	void DeferredDestroyBuffer( VkBuffer buffer, VkDeviceMemory deviceMemory, bool isTransfer );
 protected:
-	void DeferredDestroyBuffer( UniformBuffer* buffer );
-	void DeferredDestroyBuffer( VertexBuffer* buffer );
-	void DeferredDestroyBuffer( IndexBuffer* buffer );
-	void DeferredDestroyBuffer( VkBuffer buffer, VkDeviceMemory deviceMemory );
 	void CreateInstance();
 
 	void SetupDebugMessenger();

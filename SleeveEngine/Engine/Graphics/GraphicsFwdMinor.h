@@ -4,6 +4,7 @@
 #include "Graphics/Vertex.h"
 #include "Graphics/GraphicsCommon.h"
 #include "Graphics/PrimitiveUtils.h"
+#include "Graphics/Font.h"
 
 struct PerspectiveCamera;
 class IndexBuffer;

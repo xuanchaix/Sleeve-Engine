@@ -39,6 +39,12 @@ void Renderer::Initialize()
 void Renderer::Cleanup()
 {
 	CleanupSwapChain();
+	auto it = m_pendingDestroyBuffers.begin();
+	while (it != m_pendingDestroyBuffers.end()) {
+		vkDestroyBuffer( m_device, it->m_buffer, nullptr );
+		vkFreeMemory( m_device, it->m_deviceMemory, nullptr );
+		++it;
+	}
 	delete m_depthTexture;
 	delete m_sharedMeshIndexBuffer;
 	delete m_sharedMeshVertexBuffer;
@@ -230,12 +236,14 @@ void Renderer::EndFrame()
 
 	auto it = m_pendingDestroyBuffers.begin();
 	while (it != m_pendingDestroyBuffers.end()) {
-		if (vkGetFenceStatus( m_device, m_transferFences[m_currentFrame] ) == VK_SUCCESS) {
+		if ((it->m_isTransfer && vkGetFenceStatus( m_device, m_transferFences[m_currentFrame] ) == VK_SUCCESS)
+			|| (!it->m_isTransfer && it->m_destroyCount >= 3)) {
 			vkDestroyBuffer( m_device, it->m_buffer, nullptr );
 			vkFreeMemory( m_device, it->m_deviceMemory, nullptr );
 			it = m_pendingDestroyBuffers.erase( it );
 		}
 		else {
+			++it->m_destroyCount;
 			++it;
 		}
 	}
@@ -262,24 +270,24 @@ float Renderer::GetSwapChainExtentRatio() const
 	return m_swapChainExtent.width / (float)m_swapChainExtent.height;
 }
 
-void Renderer::DeferredDestroyBuffer( UniformBuffer* buffer )
+void Renderer::DeferredDestroyBuffer( UniformBuffer* buffer, bool isTransfer )
 {
-	m_pendingDestroyBuffers.push_back( BufferPendingToDestroy{ buffer->m_buffer, buffer->m_uniformBufferMemory } );
+	m_pendingDestroyBuffers.push_back( BufferPendingToDestroy{ buffer->m_buffer, buffer->m_uniformBufferMemory, isTransfer } );
 }
 
-void Renderer::DeferredDestroyBuffer( VertexBuffer* buffer )
+void Renderer::DeferredDestroyBuffer( VertexBuffer* buffer, bool isTransfer )
 {
-	m_pendingDestroyBuffers.push_back( BufferPendingToDestroy{ buffer->m_buffer, buffer->m_deviceMemory } );
+	m_pendingDestroyBuffers.push_back( BufferPendingToDestroy{ buffer->m_buffer, buffer->m_deviceMemory, isTransfer } );
 }
 
-void Renderer::DeferredDestroyBuffer( IndexBuffer* buffer )
+void Renderer::DeferredDestroyBuffer( IndexBuffer* buffer, bool isTransfer )
 {
-	m_pendingDestroyBuffers.push_back( BufferPendingToDestroy{ buffer->m_buffer, buffer->m_deviceMemory } );
+	m_pendingDestroyBuffers.push_back( BufferPendingToDestroy{ buffer->m_buffer, buffer->m_deviceMemory, isTransfer } );
 }
 
-void Renderer::DeferredDestroyBuffer( VkBuffer buffer, VkDeviceMemory deviceMemory )
+void Renderer::DeferredDestroyBuffer( VkBuffer buffer, VkDeviceMemory deviceMemory, bool isTransfer )
 {
-	m_pendingDestroyBuffers.push_back( BufferPendingToDestroy{ buffer, deviceMemory } );
+	m_pendingDestroyBuffers.push_back( BufferPendingToDestroy{ buffer, deviceMemory, isTransfer } );
 }
 
 void Renderer::CreateInstance()
@@ -937,6 +945,31 @@ Texture* Renderer::CreateTextureFromFile( std::string const& fileName )
 	return texture;
 }
 
+Texture* Renderer::CreateTextureFromBuffer( unsigned char const* buffer, uint64_t size, uint32_t width, uint32_t height )
+{
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
+	CreateBuffer( size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory );
+
+	void* data;
+	vkMapMemory( m_device, stagingBufferMemory, 0, size, 0, &data );
+	memcpy( data, buffer, static_cast<size_t>(size) );
+	vkUnmapMemory( m_device, stagingBufferMemory );
+
+	Texture* texture = new Texture( m_device );
+	CreateImage( width, height, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, texture->m_textureImage, texture->m_textureDeviceMemory );
+	TransitionImageLayout( texture->m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL );
+	CopyBufferToImage( stagingBuffer, texture->m_textureImage, static_cast<uint32_t>(width), static_cast<uint32_t>(height) );
+	TransitionImageLayout( texture->m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
+	vkDestroyBuffer( m_device, stagingBuffer, nullptr );
+	vkFreeMemory( m_device, stagingBufferMemory, nullptr );
+
+	// create texture image view
+	texture->m_textureImageView = CreateImageView( texture->m_textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT );
+
+	return texture;
+}
+
 Texture* Renderer::CreateWhiteTexture()
 {
 	// RGBA (8 bits per component), 4 pixels (2x2)
@@ -986,7 +1019,7 @@ IndexBuffer* Renderer::CreateIndexBuffer( void* indexData, uint64_t size, uint32
 
 	CopyBuffer( stagingBuffer, indexBuffer->m_buffer, bufferSize );
 
-	DeferredDestroyBuffer( stagingBuffer, stagingBufferMemory );
+	DeferredDestroyBuffer( stagingBuffer, stagingBufferMemory, true );
 // 	vkDestroyBuffer( m_device, stagingBuffer, nullptr );
 // 	vkFreeMemory( m_device, stagingBufferMemory, nullptr );
 
@@ -1011,7 +1044,7 @@ VertexBuffer* Renderer::CreateVertexBuffer( void* vertexData, uint64_t size, uin
 	CreateBuffer( bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer->m_buffer, vertexBuffer->m_deviceMemory );
 
 	CopyBuffer( stagingBuffer, vertexBuffer->m_buffer, bufferSize );
-	DeferredDestroyBuffer( stagingBuffer, stagingBufferMemory );
+	DeferredDestroyBuffer( stagingBuffer, stagingBufferMemory, true );
 // 	vkDestroyBuffer( m_device, stagingBuffer, nullptr );
 // 	vkFreeMemory( m_device, stagingBufferMemory, nullptr );
 
@@ -1085,7 +1118,7 @@ VertexBufferBinding Renderer::AddVertsDataToSharedVertexBuffer( void* vertexData
 		}
 
 		// destroy the old shared buffer
-		DeferredDestroyBuffer( m_sharedMeshVertexBuffer );
+		DeferredDestroyBuffer( m_sharedMeshVertexBuffer, true );
 
 		// create the new shared buffer
 		VkDeviceSize oldSize = m_sharedMeshVertexBuffer->m_maxSize;
@@ -1162,7 +1195,7 @@ IndexBufferBinding Renderer::AddIndicesDataToSharedIndexBuffer( void* indexData,
 		}
 
 		// destroy the old shared buffer
-		DeferredDestroyBuffer( m_sharedMeshIndexBuffer );
+		DeferredDestroyBuffer( m_sharedMeshIndexBuffer, true );
 
 		// create the new shared buffer
 		VkDeviceSize oldSize = m_sharedMeshIndexBuffer->m_maxSize;
@@ -1217,6 +1250,18 @@ void Renderer::ReturnMemoryToSharedBuffer( VertexBufferBinding const& vBinding, 
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
 		m_sharedModelUniformBuffers[i]->ReturnMemory( uBinding.m_modelUniformBufferOffset, sizeof( ModelUniformBufferObject ) );
 	}
+}
+
+VertexBuffer* Renderer::CreateDynamicVertexBuffer( uint64_t size )
+{
+	VkDeviceSize bufferSize = size;
+
+	VertexBuffer* vertexBuffer = new VertexBuffer( m_device, size );
+	vertexBuffer->m_stride = 0;
+	CreateBuffer( bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, vertexBuffer->m_buffer, vertexBuffer->m_deviceMemory );
+	vkMapMemory( m_device, vertexBuffer->m_deviceMemory, 0, bufferSize, 0, &vertexBuffer->m_mappedData );
+
+	return vertexBuffer;
 }
 
 void Renderer::CleanupSwapChain()

@@ -1,5 +1,6 @@
 #include "Core/ResourceManager.h"
 #include "Graphics/Renderer.h"
+#include "Graphics/Font.h"
 
 ResourceManager::ResourceManager()
 {
@@ -14,6 +15,9 @@ ResourceManager::~ResourceManager()
 	}
 	for (auto& shaderPair : m_shaders) {
 		delete shaderPair.second;
+	}
+	for (auto& fontPair : m_fonts) {
+		delete fontPair.second;
 	}
 }
 
@@ -48,6 +52,19 @@ Shader* ResourceManager::GetOrLoadShader( std::string const& shaderName )
 		Shader* newShader = g_theRenderer->CreateShader( shaderName );
 		m_shaders[shaderName] = newShader;
 		return newShader;
+	}
+	else {
+		return iter->second;
+	}
+}
+
+Font* ResourceManager::GetOrLoadFont( std::string const& path )
+{
+	auto iter = m_fonts.find( path );
+	if (iter == m_fonts.end()) {
+		Font* newFont = new Font( path );
+		m_fonts[path] = newFont;
+		return newFont;
 	}
 	else {
 		return iter->second;

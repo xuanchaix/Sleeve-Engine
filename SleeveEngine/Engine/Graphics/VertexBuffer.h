@@ -11,6 +11,8 @@ public:
 		vkFreeMemory( m_device, m_deviceMemory, nullptr );
 	};
 
+public:
+	void* m_mappedData = nullptr;
 protected:
 	friend class Renderer;
 	VertexBuffer( VkDevice device, uint64_t size );

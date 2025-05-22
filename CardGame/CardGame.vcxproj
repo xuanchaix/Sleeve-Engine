@@ -19,15 +19,23 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Game\Battle.cpp" />
+    <ClCompile Include="Game\Cards\Card.cpp" />
     <ClCompile Include="Game\Frameworks\App.cpp" />
     <ClCompile Include="Game\Frameworks\Game.cpp" />
     <ClCompile Include="Game\Frameworks\GameCommon.cpp" />
     <ClCompile Include="Game\Frameworks\main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Game\Battle.h" />
+    <ClInclude Include="Game\Cards\Card.h" />
+    <ClInclude Include="Game\EnemyInfo.h" />
     <ClInclude Include="Game\Frameworks\App.h" />
     <ClInclude Include="Game\Frameworks\Game.h" />
     <ClInclude Include="Game\Frameworks\GameCommon.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="Run\Data\Definitions\CardDefinition.xml" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

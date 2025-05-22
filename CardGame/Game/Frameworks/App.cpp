@@ -22,6 +22,8 @@ void App::Initialize()
 	g_theRenderer = new Renderer();
 	g_theRenderer->Initialize();
 
+	g_defaultFont = g_theResourceManager->GetOrLoadFont( "Data/Fonts/corbel.ttf" );
+
 	g_theGame = new Game();
 	g_theGame->Initialize();
 

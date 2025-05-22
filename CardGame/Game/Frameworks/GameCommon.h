@@ -7,3 +7,4 @@ class Game;
 
 extern Game* g_theGame;
 extern App* g_theApp;
+extern Font* g_defaultFont;
