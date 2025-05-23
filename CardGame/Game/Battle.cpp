@@ -2,6 +2,14 @@
 #include "Game/Cards/Card.h"
 #include "Game/Frameworks/Game.h"
 
+constexpr float CardsInBattleLineHeight = 0.f;
+constexpr float CardsInHandsHeight = 30.f;
+constexpr float CardsSpacing = 72.f;
+constexpr float BattleLineY = 50.f;
+constexpr float BattleLineLeftX = -290.f;
+constexpr float HandsLineY = 140.f;
+constexpr float HandsLineLeftX = -255.f;
+
 Battle::Battle( EnemyInfo const& enemyInfo )
 {
 	(void)enemyInfo;
@@ -48,6 +56,7 @@ Battle::~Battle()
 	for (auto card : m_enemyCardsInBattleLine) {
 		delete card;
 	}
+	delete m_currentCardToPlay;
 }
 
 void Battle::BeginPlay()
@@ -70,17 +79,20 @@ void Battle::PerformNextStep()
 	else if (m_battleState == BattleState::SelfAttacking) {
 		++m_currentAttackingCardIndex;
 		if (m_currentAttackingCardIndex >= m_myCardsInBattleLine.size()) {
+			// remove dead cards
+			RemoveDeadCards( true );
 			m_battleState = BattleState::SelfPlayCard;
-			AutoPlayCards( true );
+			BeginPlayCard();
+			//AutoPlayCards( true );
 		}
 		else {
 			CardAttack( true );
 		}
 	}
 	else if (m_battleState == BattleState::SelfPlayCard) {
-		m_battleState = BattleState::SelfEndTurn;
-		// remove dead cards
-		RemoveDeadCards( true );
+		if (!BeginPlayCard()) {
+			m_battleState = BattleState::SelfEndTurn;
+		}
 	}
 	else if (m_battleState == BattleState::SelfEndTurn) {
 		m_battleState = BattleState::EnemyStartTurn;
@@ -102,6 +114,8 @@ void Battle::PerformNextStep()
 	else if (m_battleState == BattleState::EnemyAttacking) {
 		++m_currentAttackingCardIndex;
 		if (m_currentAttackingCardIndex >= m_enemyCardsInBattleLine.size()) {
+			// remove dead cards
+			RemoveDeadCards( false );
 			m_battleState = BattleState::EnemyPlayCard;
 			AutoPlayCards( false );
 		}
@@ -111,8 +125,6 @@ void Battle::PerformNextStep()
 	}
 	else if (m_battleState == BattleState::EnemyPlayCard) {
 		m_battleState = BattleState::EnemyEndTurn;
-		// remove dead cards
-		RemoveDeadCards( false );
 	}
 	else if (m_battleState == BattleState::EnemyEndTurn) {
 		m_battleState = BattleState::SelfStartTurn;
@@ -149,10 +161,12 @@ void Battle::Update( float deltaSeconds )
 		}
 	}
 	else if (m_battleState == BattleState::SelfPlayCard) {
-		m_timer += deltaSeconds;
-		if (m_timer > 0.3f) {
-			m_timer = 0.f;
-			m_readyToPerformNextStep = true;
+		if (m_currentCardToPlay == nullptr) {
+			m_timer += deltaSeconds;
+			if (m_timer > 0.3f) {
+				m_timer = 0.f;
+				m_readyToPerformNextStep = true;
+			}
 		}
 	}
 	else if (m_battleState == BattleState::SelfEndTurn) {
@@ -212,6 +226,9 @@ void Battle::Update( float deltaSeconds )
 	for (auto card : m_enemyCardsInWaitingList) {
 		card->Update( deltaSeconds );
 	}
+	if (m_currentCardToPlay && m_currentCardToPlayIndex == -1) {
+		m_currentCardToPlay->Update( deltaSeconds );
+	}
 }
 
 void Battle::Render() const
@@ -227,6 +244,9 @@ void Battle::Render() const
 	}
 	for (auto card : m_enemyCardsInWaitingList) {
 		card->Render();
+	}
+	if (m_currentCardToPlay && m_currentCardToPlayIndex == -1) {
+		m_currentCardToPlay->Render();
 	}
 }
 
@@ -305,6 +325,25 @@ void Battle::AutoPlayCards( bool isSelf )
 	}
 }
 
+bool Battle::BeginPlayCard()
+{
+	// check all cards and if there is any card cool down is 0, play them
+	for (size_t i = 0; i < m_myCardsInWaitingList.size();) {
+		if (m_myCardsInWaitingList[i]->m_curCoolDown == 0) {
+			m_myCardsInWaitingList[i]->m_inBattleLine = true;
+			m_currentCardToPlay = m_myCardsInWaitingList[i];
+			m_currentCardToPlay->m_notShowCard = true;
+			m_myBattleLineSizeBeforePlay = (uint32_t)m_myCardsInBattleLine.size();
+			m_myCardsInWaitingList.erase( m_myCardsInWaitingList.begin() + i );
+			return true;
+		}
+		else {
+			++i;
+		}
+	}
+	return false;
+}
+
 void Battle::RemoveDeadCards( bool isSelf )
 {
 	for (size_t i = 0; i < m_myCardsInBattleLine.size();) {
@@ -327,46 +366,45 @@ void Battle::RemoveDeadCards( bool isSelf )
 	}
 }
 
-constexpr float cardsInBattleLineHeight = 0.f;
-constexpr float cardsInHandsHeight = 30.f;
-
 void Battle::UpdateCardPosition()
 {
 	for (size_t i = 0; i < m_myCardsInBattleLine.size(); ++i) {
 		Card* card = m_myCardsInBattleLine[i];
-		Vec2 centerPos = Vec2( -290.f + i * 72.f, -50.f );
+		Vec2 centerPos = Vec2( BattleLineLeftX + i * CardsSpacing, -BattleLineY );
 		card->m_cardBounds2D = AABB2( centerPos - Vec2( CardWidth * 0.5f, CardHeight * 0.5f ), centerPos + Vec2( CardWidth * 0.5f, CardHeight * 0.5f ) );
-		card->m_position = Vec3( -290.f + i * 72.f, -50.f, cardsInBattleLineHeight );
+		card->m_position = Vec3( BattleLineLeftX + i * CardsSpacing, -BattleLineY, CardsInBattleLineHeight );
 	}
 	for (size_t i = 0; i < m_enemyCardsInBattleLine.size(); ++i) {
 		Card* card = m_enemyCardsInBattleLine[i];
-		Vec2 centerPos = Vec2( -290.f + i * 72.f, 50.f );
+		Vec2 centerPos = Vec2( BattleLineLeftX + i * CardsSpacing, BattleLineY );
 		card->m_cardBounds2D = AABB2( centerPos - Vec2( CardWidth * 0.5f, CardHeight * 0.5f ), centerPos + Vec2( CardWidth * 0.5f, CardHeight * 0.5f ) );
-		card->m_position = Vec3( -290.f + i * 72.f, 50.f, cardsInBattleLineHeight );
+		card->m_position = Vec3( BattleLineLeftX + i * CardsSpacing, BattleLineY, CardsInBattleLineHeight );
 	}
 	for (size_t i = 0; i < m_myCardsInWaitingList.size(); ++i) {
 		Card* card = m_myCardsInWaitingList[i];
-		Vec2 centerPos = Vec2( -255.f + i * 72.f, -140.f );
+		Vec2 centerPos = Vec2( HandsLineLeftX + i * CardsSpacing, -HandsLineY );
 		card->m_cardBounds2D = AABB2( centerPos - Vec2( CardWidth * 0.5f, CardHeight * 0.5f ), centerPos + Vec2( CardWidth * 0.5f, CardHeight * 0.5f ) );
-		card->m_position = Vec3( -255.f + i * 72.f, -140.f, cardsInHandsHeight );
+		card->m_position = Vec3( HandsLineLeftX + i * CardsSpacing, -HandsLineY, CardsInHandsHeight );
 	}
 	for (size_t i = 0; i < m_enemyCardsInWaitingList.size(); ++i) {
 		Card* card = m_enemyCardsInWaitingList[i];
-		Vec2 centerPos = Vec2( -255.f + i * 72.f, 140.f );
+		Vec2 centerPos = Vec2( HandsLineLeftX + i * CardsSpacing, HandsLineY );
 		card->m_cardBounds2D = AABB2( centerPos - Vec2( CardWidth * 0.5f, CardHeight * 0.5f ), centerPos + Vec2( CardWidth * 0.5f, CardHeight * 0.5f ) );
-		card->m_position = Vec3( -255.f + i * 72.f, 140.f, cardsInHandsHeight );
+		card->m_position = Vec3( HandsLineLeftX + i * CardsSpacing, HandsLineY, CardsInHandsHeight );
 	}
 }
 
 void Battle::HandleMouseInput()
 {
 	Vec2 normalizedCursorPos = g_theInput->GetCursorNormalizedScreenPos();
-	Vec2 mousePosInBattleLine = g_theGame->m_gameDefault3DCamera->TransferScreenPosToZPlane( normalizedCursorPos, cardsInBattleLineHeight );
-	Vec2 mousePosInHands = g_theGame->m_gameDefault3DCamera->TransferScreenPosToZPlane( normalizedCursorPos, cardsInHandsHeight );
+	Vec2 mousePosInBattleLine = g_theGame->m_gameDefault3DCamera->TransferScreenPosToZPlane( normalizedCursorPos, CardsInBattleLineHeight );
+	Vec2 mousePosInHands = g_theGame->m_gameDefault3DCamera->TransferScreenPosToZPlane( normalizedCursorPos, CardsInHandsHeight );
 
+	bool isCardHovering = false;
 	for (auto card : m_myCardsInBattleLine) {
-		if (card->m_cardBounds2D.IsPointInside( mousePosInBattleLine )) {
+		if (card != m_currentCardToPlay && card->m_cardBounds2D.IsPointInside( mousePosInBattleLine )) {
 			card->m_isHovering = true;
+			isCardHovering = true;
 		}
 		else {
 			card->m_isHovering = false;
@@ -375,6 +413,7 @@ void Battle::HandleMouseInput()
 	for (auto card : m_enemyCardsInBattleLine) {
 		if (card->m_cardBounds2D.IsPointInside( mousePosInBattleLine )) {
 			card->m_isHovering = true;
+			isCardHovering = true;
 		}
 		else {
 			card->m_isHovering = false;
@@ -383,6 +422,7 @@ void Battle::HandleMouseInput()
 	for (auto card : m_myCardsInWaitingList) {
 		if (card->m_cardBounds2D.IsPointInside( mousePosInHands )) {
 			card->m_isHovering = true;
+			isCardHovering = true;
 		}
 		else {
 			card->m_isHovering = false;
@@ -391,9 +431,49 @@ void Battle::HandleMouseInput()
 	for (auto card : m_enemyCardsInWaitingList) {
 		if (card->m_cardBounds2D.IsPointInside( mousePosInHands )) {
 			card->m_isHovering = true;
+			isCardHovering = true;
 		}
 		else {
 			card->m_isHovering = false;
+		}
+	}
+	if (isCardHovering && m_currentCardToPlay && m_currentCardToPlay->m_notShowCard) {
+		m_currentCardToPlay->m_showDetail = false;
+	}
+	else if (!isCardHovering && m_currentCardToPlay && m_currentCardToPlayIndex == -1) {
+		m_currentCardToPlay->m_showDetail = true;
+	}
+	if (m_battleState == BattleState::SelfPlayCard && m_currentCardToPlay != nullptr) {
+		AABB2 myBattleLineBounds = AABB2( Vec2( BattleLineLeftX - CardsSpacing * 0.5f, -BattleLineY - CardHeight * 0.5f ), Vec2( BattleLineLeftX + CardsSpacing * GetClamped( (float)(m_myBattleLineSizeBeforePlay + 0.5f), 0.5f, 9.5f ), -BattleLineY + CardHeight * 0.5f ) );
+		if (myBattleLineBounds.IsPointInside( mousePosInBattleLine )) {
+			int index = RoundDownToInt( (mousePosInBattleLine.x - BattleLineLeftX + CardsSpacing * 0.5f) / CardsSpacing );
+			if (m_currentCardToPlayIndex == -1) {
+				m_currentCardToPlayIndex = index;
+				m_myCardsInBattleLine.insert( m_myCardsInBattleLine.begin() + index, m_currentCardToPlay );
+				m_currentCardToPlay->m_notShowCard = false;
+				m_currentCardToPlay->m_showDetail = true;
+			}
+			else if (m_currentCardToPlayIndex != index) {
+				m_myCardsInBattleLine.erase( m_myCardsInBattleLine.begin() + m_currentCardToPlayIndex );
+				m_currentCardToPlayIndex = index;
+				m_myCardsInBattleLine.insert( m_myCardsInBattleLine.begin() + index, m_currentCardToPlay );
+				m_currentCardToPlay->m_notShowCard = false;
+				m_currentCardToPlay->m_showDetail = true;
+			}
+		}
+		else if (m_currentCardToPlayIndex != -1) {
+			m_myCardsInBattleLine.erase( m_myCardsInBattleLine.begin() + m_currentCardToPlayIndex );
+			m_currentCardToPlayIndex = -1;
+			m_currentCardToPlay->m_notShowCard = true;
+			m_currentCardToPlay->m_showDetail = false;
+		}
+
+		if (m_currentCardToPlayIndex != -1 && g_theInput->WasKeyJustReleased( ENGINE_MOUSE_BUTTON_LEFT )) {
+			m_readyToPerformNextStep = true;
+			m_currentCardToPlay->m_notShowCard = false;
+			m_currentCardToPlay->m_showDetail = false;
+			m_currentCardToPlay = nullptr;
+			m_currentCardToPlayIndex = -1;
 		}
 	}
 }

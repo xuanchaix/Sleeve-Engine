@@ -22,7 +22,7 @@ void App::Initialize()
 	g_theRenderer = new Renderer();
 	g_theRenderer->Initialize();
 
-	g_defaultFont = g_theResourceManager->GetOrLoadFont( "Data/Fonts/corbel.ttf" );
+	g_defaultFont = g_theResourceManager->GetOrLoadFont( "Data/Fonts/arial.ttf" );
 
 	g_theGame = new Game();
 	g_theGame->Initialize();
@@ -84,7 +84,7 @@ void App::RunFrame()
 
 void App::EndFrame()
 {
-	g_theInput->BeginFrame();
+	g_theInput->EndFrame();
 	g_theRenderer->EndFrame();
 }
 

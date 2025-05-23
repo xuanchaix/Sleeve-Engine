@@ -1,7 +1,7 @@
 #include "Game/Cards/Card.h"
 #include "Engine/Graphics/GraphicsFwd.h"
-constexpr uint32_t PerFrameTextVertexCount = 36;
-constexpr uint32_t PerFrameTextDataSize = 36 * sizeof( VertexPCU3D );
+constexpr uint32_t PerFrameTextVertexCount = 600;
+constexpr uint32_t PerFrameTextDataSize = PerFrameTextVertexCount * sizeof( VertexPCU3D );
 
 
 
@@ -63,27 +63,30 @@ void Card::Update( float deltaSeconds )
 	// update the text(health, damage, cool down)
 	m_textVerts.clear();
 	if (!m_inBattleLine) {
-		g_defaultFont->AddVertsForText2D( m_textVerts, std::to_string( m_curCoolDown ), Vec2( -32.f, 31.f ), Rgba8( 0, 0, 0 ), 20.f, 1.f );
+		g_defaultFont->AddVertsForTextInBox2D( m_textVerts, std::to_string( m_curCoolDown ), AABB2( Vec2( -32.f, 30.f ), Vec2( -15.f, 50.f ) ), Rgba8( 0, 0, 0 ), 20.f, Vec2( 0.f, 1.f ), TextBoxMode::SHRINK_TO_FIT, 1.f );
 	}
 	if (m_curDamage < m_def.m_damage) {
-		g_defaultFont->AddVertsForText2D( m_textVerts, std::to_string( m_curDamage ), Vec2( -32.f, -43.f ), Rgba8( 255, 0, 0 ), 20.f, 1.f );
+		g_defaultFont->AddVertsForTextInBox2D( m_textVerts, std::to_string( m_curDamage ), AABB2( Vec2( -32.f, -43.f ), Vec2(-15.f, -23.f) ), Rgba8( 255, 0, 0 ), 20.f, Vec2( 0.f, 0.5f ), TextBoxMode::SHRINK_TO_FIT, 1.f );
 	}
 	else if (m_curDamage > m_def.m_damage) {
-		g_defaultFont->AddVertsForText2D( m_textVerts, std::to_string( m_curDamage ), Vec2( -32.f, -43.f ), Rgba8( 0, 255, 0 ), 20.f, 1.f );
+		g_defaultFont->AddVertsForTextInBox2D( m_textVerts, std::to_string( m_curDamage ), AABB2( Vec2( -32.f, -43.f ), Vec2(-15.f, -23.f)), Rgba8( 0, 255, 0 ), 20.f, Vec2( 0.f, 0.5f ), TextBoxMode::SHRINK_TO_FIT, 1.f );
 	}
 	else {
-		g_defaultFont->AddVertsForText2D( m_textVerts, std::to_string( m_curDamage ), Vec2( -32.f, -43.f ), Rgba8( 0, 0, 0 ), 20.f, 1.f );
+		g_defaultFont->AddVertsForTextInBox2D( m_textVerts, std::to_string( m_curDamage ), AABB2( Vec2( -32.f, -43.f ), Vec2( -15.f, -23.f ) ), Rgba8( 0, 0, 0 ), 20.f, Vec2( 0.f, 0.5f ), TextBoxMode::SHRINK_TO_FIT, 1.f );
 	}
 
 	if (m_curHealth < m_def.m_health) {
-		g_defaultFont->AddVertsForText2D( m_textVerts, std::to_string( m_curHealth ), Vec2( 15.f, -43.f ), Rgba8( 255, 0, 0 ), 20.f, 1.f );
+		g_defaultFont->AddVertsForTextInBox2D( m_textVerts, std::to_string( m_curHealth ), AABB2(Vec2( 15.f, -43.f ), Vec2(32.f, -23.f)), Rgba8(255, 0, 0), 20.f, Vec2( 1.f, 0.5f ), TextBoxMode::SHRINK_TO_FIT, 1.f);
 	}
 	else if (m_curHealth > m_def.m_health) {
-		g_defaultFont->AddVertsForText2D( m_textVerts, std::to_string( m_curHealth ), Vec2( 15.f, -43.f ), Rgba8( 0, 255, 0 ), 20.f, 1.f );
+		g_defaultFont->AddVertsForTextInBox2D( m_textVerts, std::to_string( m_curHealth ), AABB2(Vec2( 15.f, -43.f ), Vec2(32.f, -23.f)), Rgba8( 0, 255, 0 ), 20.f, Vec2( 1.f, 0.5f ), TextBoxMode::SHRINK_TO_FIT, 1.f );
 	}
 	else {
-		g_defaultFont->AddVertsForText2D( m_textVerts, std::to_string( m_curHealth ), Vec2( 15.f, -43.f ), Rgba8( 0, 0, 0 ), 20.f, 1.f );
+		g_defaultFont->AddVertsForTextInBox2D( m_textVerts, std::to_string( m_curHealth ), AABB2(Vec2( 15.f, -43.f ), Vec2(32.f, -23.f)), Rgba8( 0, 0, 0 ), 20.f, Vec2( 1.f, 0.5f ), TextBoxMode::SHRINK_TO_FIT, 1.f );
 	}
+
+	g_defaultFont->AddVertsForTextInBox2D( m_textVerts, m_def.m_name, AABB2( Vec2( -20.f, 31.f ), Vec2( 20.f, 45.f ) ), Rgba8( 0, 0, 0 ), 12.f, Vec2( 0.5f, 0.5f ), TextBoxMode::SHRINK_TO_FIT, 1.f );
+
 	m_textVertexBufferBinding.m_vertexBufferVertexCount = (uint32_t)m_textVerts.size();
 	uint32_t frameIndex = g_theRenderer->GetCurFrameNumber();
 	uint32_t offset = frameIndex * PerFrameTextDataSize;
@@ -94,29 +97,31 @@ void Card::Update( float deltaSeconds )
 
 void Card::Render() const
 {
-	// -------------------------------Draw Card-----------------------------------
 	// if the current pipeline is not my shader's pipeline, bind my shader's pipeline
 	g_theRenderer->BindShader( m_shader );
-	// acquire and set the descriptor set for this specific entity
-	g_theRenderer->BeginDrawCommands( m_uniformBufferBinding, m_textureBinding );
-	// copy the ubo data to the graphics card
-	g_theRenderer->UpdateSharedModelUniformBuffer( m_uniformBufferBinding, (void*)&m_modelMatrix, sizeof( m_modelMatrix ) );
-	if (m_useIndexBuffer) {
-		// draw the entity
-		g_theRenderer->DrawIndexed( m_vertexBufferBinding, m_indexBufferBinding );
-	}
-	else {
-		// draw the entity
-		g_theRenderer->Draw( m_vertexBufferBinding );
-	}
+	if (!m_notShowCard) {
+		// -------------------------------Draw Card-----------------------------------
+		// acquire and set the descriptor set for this specific entity
+		g_theRenderer->BeginDrawCommands( m_uniformBufferBinding, m_textureBinding );
+		// copy the ubo data to the graphics card
+		g_theRenderer->UpdateSharedModelUniformBuffer( m_uniformBufferBinding, (void*)&m_modelMatrix, sizeof( m_modelMatrix ) );
+		if (m_useIndexBuffer) {
+			// draw the entity
+			g_theRenderer->DrawIndexed( m_vertexBufferBinding, m_indexBufferBinding );
+		}
+		else {
+			// draw the entity
+			g_theRenderer->Draw( m_vertexBufferBinding );
+		}
 
-	// ----------------------------------Draw texts--------------------------------
-	// acquire and set the descriptor set for this specific entity
-	g_theRenderer->BeginDrawCommands( m_uniformBufferBinding, m_fontTextureBinding );
-	g_theRenderer->Draw( m_textVertexBufferBinding );
-
+		// ----------------------------------Draw texts--------------------------------
+		// acquire and set the descriptor set for this specific entity
+		g_theRenderer->BeginDrawCommands( m_uniformBufferBinding, m_fontTextureBinding );
+		g_theRenderer->Draw( m_textVertexBufferBinding );
+	}
+	
 	//-----------------------------------Hovering: show as UI----------------------
-	if (m_isHovering) {
+	if (m_isHovering || m_showDetail) {
 		// acquire and set the descriptor set for this specific entity
 		g_theRenderer->BeginDrawCommands( m_UIBinding, m_textureBinding );
 		// copy the ubo data to the graphics card
@@ -151,12 +156,19 @@ void Card::CalculateModelMatrix( Mat44& modelMat )
 		modelMat.Append( Mat44( Vec3( 1.06f, 0.f, 0.f ), Vec3( 0.f, 1.06f, 0.f ), Vec3( 0.f, 0.f, 1.06f ), Vec3( 0.f, 0.f, 0.f ) ) );
 	}
 
-	constexpr float startAngle = -30.f;
-	constexpr float maxShowingTime = 0.35f;
-	float rollAngle = RangeMapClamped( m_hoveringTimer, 0.f, maxShowingTime, startAngle, 0.f );
-	Vec3 centerPos = Vec3( 160.f, 0.f, 200.f ) + Vec3( -CosDegrees( rollAngle ), 0.f, SinDegrees( rollAngle ) ) * CardWidth * 0.5f;
-	m_UIMatrix = Mat44( Vec3( 1.f, 0.f, 0.f ), Vec3( 0.f, 1.f, 0.f ), Vec3( 0.f, 0.f, 1.f ), centerPos );
-	m_UIMatrix.Append( Euler( 0.f, rollAngle, 0.f ).GetMatrix() );
+	if (m_isHovering) {
+		constexpr float startAngle = -35.f;
+		constexpr float maxShowingTime = 0.35f;
+		float normalizedTime = SmoothStop2( RangeMapClamped( m_hoveringTimer, 0.f, maxShowingTime, 0.f, 1.f ) );
+		float rollAngle = RangeMap( normalizedTime, 0.f, 1.f, startAngle, 0.f );
+		Vec3 centerPos = Vec3( 160.f, 0.f, 200.f ) + Vec3( -CosDegrees( rollAngle ), 0.f, SinDegrees( rollAngle ) ) * CardWidth * 0.5f;
+		m_UIMatrix = Mat44( Vec3( 1.f, 0.f, 0.f ), Vec3( 0.f, 1.f, 0.f ), Vec3( 0.f, 0.f, 1.f ), centerPos );
+		m_UIMatrix.Append( Euler( 0.f, rollAngle, 0.f ).GetMatrix() );
+	}
+	else if(m_showDetail){
+		Vec3 centerPos = Vec3( 160.f - CardWidth * 0.5f, 0.f, 200.f );
+		m_UIMatrix = Mat44( Vec3( 1.f, 0.f, 0.f ), Vec3( 0.f, 1.f, 0.f ), Vec3( 0.f, 0.f, 1.f ), centerPos );
+	}
 }
 
 CardDefinition::CardDefinition()

@@ -91,6 +91,7 @@ public:
 
 	VertexBuffer* CreateDynamicVertexBuffer( uint64_t size );
 	void CopyDataToVertexBufferThroughStagingBuffer( void* buffer, uint64_t size, VertexBuffer* vertexBuffer, uint64_t dstOffset );
+	void CopyDataToUniformBufferThroughStagingBuffer( void* buffer, uint64_t size, UniformBuffer* uniformBuffer, uint64_t dstOffset );
 
 	void DeferredDestroyBuffer( UniformBuffer* buffer, bool isTransfer );
 	void DeferredDestroyBuffer( VertexBuffer* buffer, bool isTransfer );

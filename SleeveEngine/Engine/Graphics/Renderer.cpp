@@ -124,6 +124,16 @@ void Renderer::BeginFrame()
 	
 	m_stagingBuffers[m_currentFrame]->Refresh();
 
+// 	VkBufferMemoryBarrier bufferBarrier {};
+// 	bufferBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+// 	bufferBarrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+// 	bufferBarrier.dstAccessMask = VK_ACCESS_UNIFORM_READ_BIT;
+// 	bufferBarrier.buffer = m_sharedModelUniformBuffers[m_currentFrame]->m_buffer;
+// 	bufferBarrier.offset = 0;
+// 	bufferBarrier.size = VK_WHOLE_SIZE;
+// 
+// 	vkCmdPipelineBarrier( m_commandBuffers[m_currentFrame], VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0, nullptr, 1, &bufferBarrier, 0, nullptr );
+
 	VkCommandBufferBeginInfo transferBeginInfo{};
 	transferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	transferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -169,14 +179,6 @@ void Renderer::BeginFrame()
 
 void Renderer::EndFrame()
 {
-// 	VkBufferMemoryBarrier barrier{};
-// 	barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-// 	barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
-// 	barrier.dstAccessMask = VK_ACCESS_UNIFORM_READ_BIT;
-// 	barrier.buffer = m_sharedModelUniformBuffers[m_currentFrame]->m_buffer;
-// 	barrier.size = VK_WHOLE_SIZE;
-// 	vkCmdPipelineBarrier( m_commandBuffers[m_currentFrame], VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, 0, 0, nullptr, 1, &barrier, 0, nullptr );
-
 	vkCmdEndRenderPass( m_commandBuffers[m_currentFrame] );
 
 	ASSERT_OR_ERROR( vkEndCommandBuffer( m_commandBuffers[m_currentFrame] ) == VK_SUCCESS, "failed to record command buffer!" );
@@ -905,12 +907,14 @@ void Renderer::EndSingleTimeCommands( VkCommandBuffer commandBuffer )
 
 void Renderer::UpdateUniformBuffer( UniformBuffer* uniformBuffer, void* newData, size_t dataSize)
 {
+	//CopyDataToUniformBufferThroughStagingBuffer( newData, dataSize, uniformBuffer, 0 );
 	memcpy( uniformBuffer->m_uniformBufferMapped, newData, dataSize );
 }
 
 void Renderer::UpdateSharedModelUniformBuffer( UniformBufferBinding const& binding, void* newData, size_t dataSize )
 {
 	if (binding.m_flags & UNIFORM_BUFFER_USE_MODEL_CONSTANTS_BINDING_2) {
+		//CopyDataToUniformBufferThroughStagingBuffer( newData, dataSize, m_sharedModelUniformBuffers[m_currentFrame], binding.m_modelUniformBufferOffset );
 		memcpy( (void*)((uint64_t)(m_sharedModelUniformBuffers[m_currentFrame])->m_uniformBufferMapped + binding.m_modelUniformBufferOffset), newData, dataSize );
 	}
 }
@@ -1065,6 +1069,8 @@ UniformBuffer* Renderer::CreateUniformBuffer( uint64_t size )
 	UniformBuffer* uniformBuffer = new UniformBuffer( m_device, size );
 	uniformBuffer->m_stride = size;
 	uniformBuffer->m_maxSize = size;
+	
+	//CreateBuffer( size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, uniformBuffer->m_buffer, uniformBuffer->m_uniformBufferMemory );
 	CreateBuffer( size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffer->m_buffer, uniformBuffer->m_uniformBufferMemory );
 
 	vkMapMemory( m_device, uniformBuffer->m_uniformBufferMemory, 0, size, 0, &uniformBuffer->m_uniformBufferMapped );
@@ -1308,6 +1314,24 @@ void Renderer::CopyDataToVertexBufferThroughStagingBuffer( void* buffer, uint64_
 	CopyBuffer( m_stagingBuffers[m_currentFrame]->m_stagingBuffer, vertexBuffer->m_buffer, size, stagingOffset, dstOffset );
 }
 
+void Renderer::CopyDataToUniformBufferThroughStagingBuffer( void* buffer, uint64_t size, UniformBuffer* uniformBuffer, uint64_t dstOffset )
+{
+	if (size == 0) {
+		return;
+	}
+	// get a space in staging buffer
+	VkDeviceSize stagingOffset;
+	if (!m_stagingBuffers[m_currentFrame]->FindProperPositionForSizeInBuffer( stagingOffset, size )) {
+		// Error!
+		THROW_ERROR( "Staging buffer is not big enough!" );
+	}
+	// copy the data to the staging buffer
+	memcpy( (void*)((VkDeviceSize)m_stagingBuffers[m_currentFrame]->m_mappedData + stagingOffset), buffer, (size_t)size );
+
+	// copy the data from staging buffer to the buffer
+	CopyBuffer( m_stagingBuffers[m_currentFrame]->m_stagingBuffer, uniformBuffer->m_buffer, size, stagingOffset, dstOffset );
+}
+
 void Renderer::CleanupSwapChain()
 {
 	for (auto framebuffer : m_swapChainFramebuffers) {
@@ -1365,6 +1389,7 @@ UniformBuffer* Renderer::CreateSharedUniformBuffer( uint64_t size, uint32_t stri
 	UniformBuffer* uniformBuffer = new UniformBuffer( m_device, size );
 	uniformBuffer->m_stride = stride;
 	uniformBuffer->m_maxSize = size;
+	//CreateBuffer( size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, uniformBuffer->m_buffer, uniformBuffer->m_uniformBufferMemory );
 	CreateBuffer( size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffer->m_buffer, uniformBuffer->m_uniformBufferMemory );
 
 	vkMapMemory( m_device, uniformBuffer->m_uniformBufferMemory, 0, size, 0, &uniformBuffer->m_uniformBufferMapped );

@@ -144,37 +144,51 @@ Vector2<T> GetProjectedOnto2D( Vector2<T> const& vectorToProject, Vector2<T> con
 
 ///
 template<FloatingPointType T>
+T ComputeCubicBezier1D( T A, T B, T C, T D, T t );
+/// 
+template<FloatingPointType T>
+T ComputeQuinticBezier1D( T A, T B, T C, T D, T E, T F, T t );
+/// t * t
+template<FloatingPointType T>
 T SmoothStart2( T t );
-///
+/// t * t * t
 template<FloatingPointType T>
 T SmoothStart3( T t );
-///
+/// t * t * t * t
 template<FloatingPointType T>
 T SmoothStart4( T t );
-///
+/// t * t * t * t * t
 template<FloatingPointType T>
 T SmoothStart5( T t );
-///
+/// t * t * t * t * t * t
 template<FloatingPointType T>
 T SmoothStart6( T t );
-///
+/// 1 - (1 - t) ^ 2
 template<FloatingPointType T>
 T SmoothStop2( T t );
-///
-float SmoothStop3( float t );
-///
-float SmoothStop4( float t );
-///
-float SmoothStop5( float t );
-///
-float SmoothStop6( float t );
-///
-float SmoothStep3( float t );
-///
-float SmoothStep5( float t );
-///
-float Hesitate3( float t );
-///
-float Hesitate5( float t );
+/// 1 - (1 - t) ^ 3
+template<FloatingPointType T>
+T SmoothStop3( T t );
+/// 1 - (1 - t) ^ 4
+template<FloatingPointType T>
+T SmoothStop4( T t );
+/// 1 - (1 - t) ^ 5
+template<FloatingPointType T>
+T SmoothStop5( T t );
+/// 1 - (1 - t) ^ 6
+template<FloatingPointType T>
+T SmoothStop6( T t );
+/// first slow then fast then slow
+template<FloatingPointType T>
+T SmoothStep3( T t );
+/// first slow then fast then slow
+template<FloatingPointType T>
+T SmoothStep5( T t );
+/// first fast then slow then fast
+template<FloatingPointType T>
+T Hesitate3( T t );
+/// first fast then slow then fast
+template<FloatingPointType T>
+T Hesitate5( T t );
 
 #include "MathUtils.inl"

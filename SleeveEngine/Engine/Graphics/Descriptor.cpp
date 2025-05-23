@@ -35,7 +35,7 @@ DescriptorPools::~DescriptorPools()
 
 void DescriptorPools::BeginFrame()
 {
-	// free all sets they need to be reallocated this frame
+	// free all sets, they need to be reallocated this frame
 	for (auto pool : m_pools[g_theRenderer->m_currentFrame]) {
 		vkResetDescriptorPool( m_device, pool, 0 );
 	}

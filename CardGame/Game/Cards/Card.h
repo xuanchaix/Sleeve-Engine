@@ -56,6 +56,8 @@ public:
 	float m_hoveringTimer = 0.f;
 	bool m_inBattleLine = false;
 	bool m_isHovering = false;
+	bool m_showDetail = false;
+	bool m_notShowCard = false;
 	AABB2 m_cardBounds2D;
 	std::vector<VertexPCU3D> m_textVerts;
 	VertexBufferBinding m_textVertexBufferBinding;

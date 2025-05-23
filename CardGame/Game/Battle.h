@@ -18,9 +18,11 @@ public:
 	void Update( float deltaSeconds );
 	void Render() const;
 
+protected:
 	void CardAttack( bool isSelf );
 	void DrawCard( bool isSelf );
 	void AutoPlayCards( bool isSelf );
+	bool BeginPlayCard();
 	void RemoveDeadCards( bool isSelf );
 	void UpdateCardPosition();
 
@@ -35,6 +37,9 @@ public:
 	BattleState m_battleState = BattleState::SelfStartTurn;
 	int m_enemyMorale = 30;
 	int m_myMorale = 30;
+	int m_currentCardToPlayIndex = -1;
+	uint32_t m_myBattleLineSizeBeforePlay = -1;
+	Card* m_currentCardToPlay = nullptr;
 	std::deque<Card*> m_enemyCardsInBattleLine;
 	std::deque<Card*> m_myCardsInBattleLine;
 	std::vector<Card*> m_enemyCardsInDeck;

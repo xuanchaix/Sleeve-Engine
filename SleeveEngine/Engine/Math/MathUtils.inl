@@ -292,25 +292,132 @@ Vector2<T> GetProjectedOnto2D( Vector2<T> const& vectorToProject, Vector2<T> con
 }
 
 template<FloatingPointType T>
+T ComputeCubicBezier1D( T A, T B, T C, T D, T t )
+{
+	T E = (static_cast<T>(1.f) - t) * A + t * B;
+	T F = (static_cast<T>(1.f) - t) * B + t * C;
+	T G = (static_cast<T>(1.f) - t) * C + t * D;
+	
+	T H = (static_cast<T>(1.f) - t) * E + t * F;
+	T I = (static_cast<T>(1.f) - t) * F + t * G;
+
+	return (static_cast<T>(1.f) - t) * H + t * I;
+}
+
+template<FloatingPointType T>
+T ComputeQuinticBezier1D( T A, T B, T C, T D, T E, T F, T t )
+{
+	T AB = Interpolate( A, B, t );
+	T BC = Interpolate( B, C, t );
+	T CD = Interpolate( C, D, t );
+	T DE = Interpolate( D, E, t );
+	T EF = Interpolate( E, F, t );
+
+	T AC = Interpolate( AB, BC, t );
+	T BD = Interpolate( BC, CD, t );
+	T CE = Interpolate( CD, DE, t );
+	T DF = Interpolate( DE, EF, t );
+
+	T AD = Interpolate( AC, BD, t );
+	T BE = Interpolate( BD, CE, t );
+	T CF = Interpolate( CE, DF, t );
+
+	T AE = Interpolate( AD, BE, t );
+	T BF = Interpolate( BE, CF, t );
+
+	return Interpolate( AE, BF, t );
+}
+
+template<FloatingPointType T>
 T SmoothStart2( T t )
 {
-
+	return t * t;
 }
 
 template<FloatingPointType T>
 T SmoothStart3( T t )
 {
-
+	return t * t * t;
 }
 
 template<FloatingPointType T>
 T SmoothStart4( T t )
 {
-
+	return (t * t) * (t * t);
 }
 
 template<FloatingPointType T>
 T SmoothStart5( T t )
 {
-
+	return (t * t) * (t * t) * t;
 }
+
+template<FloatingPointType T>
+T SmoothStart6( T t )
+{
+	return (t * t) * (t * t) * (t * t);
+}
+
+template<FloatingPointType T>
+T SmoothStop2( T t )
+{
+	T s = static_cast<T>(1.f) - t;
+	return static_cast<T>(1.f) - s * s;
+}
+
+template<FloatingPointType T>
+T SmoothStop3( T t )
+{
+	T s = static_cast<T>(1.f) - t;
+	return static_cast<T>(1.f) - s * s * s;
+}
+
+template<FloatingPointType T>
+T SmoothStop4( T t )
+{
+	T s = static_cast<T>(1.f) - t;
+	return static_cast<T>(1.f) - (s * s) * (s * s);
+}
+
+template<FloatingPointType T>
+T SmoothStop5( T t )
+{
+	T s = static_cast<T>(1.f) - t;
+	return static_cast<T>(1.f) - (s * s) * (s * s) * s;
+}
+
+template<FloatingPointType T>
+T SmoothStop6( T t )
+{
+	T s = static_cast<T>(1.f) - t;
+	return static_cast<T>(1.f) - (s * s) * (s * s) * (s * s);
+}
+
+template<FloatingPointType T>
+T SmoothStep3( T t )
+{
+	return (static_cast<T>(1.f) - t) * SmoothStart2( t ) + t * SmoothStop2( t );
+}
+
+template<FloatingPointType T>
+T SmoothStep5( T t )
+{
+	return ComputeQuinticBezier1D( static_cast<T>(0.f), static_cast<T>(0.f),
+		static_cast<T>(0.f), static_cast<T>(1.f),
+		static_cast<T>(1.f), static_cast<T>(1.f), t );
+}
+
+template<FloatingPointType T>
+T Hesitate3( T t )
+{
+	return ComputeCubicBezier1D( static_cast<T>(0.f), static_cast<T>(1.f),  static_cast<T>(0.f), static_cast<T>(1.f), t );
+}
+
+template<FloatingPointType T>
+T Hesitate5( T t )
+{
+	return ComputeQuinticBezier1D( static_cast<T>(0.f), static_cast<T>(1.f), static_cast<T>(0.f), 
+		static_cast<T>(1.f), static_cast<T>(0.f), static_cast<T>(1.f), t );
+}
+
+
