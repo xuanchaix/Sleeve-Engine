@@ -3,20 +3,16 @@
 #include <vector>
 #include <chrono>
 
-Entity3D::Entity3D( Vec3 const& position /*= Vec3()*/, Euler const& orientation /*= Euler() */, bool isTest )
+Entity3D::Entity3D( Vec3 const& position /*= Vec3()*/, Euler const& orientation /*= Euler() */ )
 	:m_position(position), m_orientation(orientation)
 {
-	if (isTest) {
-		AddVertsForAABB2D( m_vertices, AABB2( Vec2( 60.f, 80.f ), Vec2( 400.f, 230.f ) ), Rgba8( 255, 255, 255 ) );
-		m_useIndexBuffer = false;
-	}
-	else {
+// 		AddVertsForAABB2D( m_vertices, AABB2( Vec2( 60.f, 80.f ), Vec2( 400.f, 230.f ) ), Rgba8( 255, 255, 255 ) );
+// 		m_useIndexBuffer = false;
 		m_vertices = { {Vec3{-0.5f, -0.5f, 0.0f}, Rgba8{255, 255, 255, 255}, Vec2{0.0f, 0.0f}},
 						{Vec3{0.5f, -0.5f, 0.0f}, Rgba8{255, 255, 255, 255}, Vec2{1.0f, 0.0f}},
 						{Vec3{0.5f, 0.5f, 0.0f}, Rgba8{255, 255, 255, 255}, Vec2{1.0f, 1.0f}},
 						{Vec3{-0.5f, 0.5f, 0.0f}, Rgba8{255, 255, 255, 255}, Vec2{0.0f, 1.0f}}, };
 		m_indices = { 0, 1, 2, 2, 3, 0, };
-	}
 }
 
 Entity3D::~Entity3D()

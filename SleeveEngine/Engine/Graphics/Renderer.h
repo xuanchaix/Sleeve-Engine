@@ -17,7 +17,8 @@
 struct PerspectiveCamera;
 
 const std::vector<const char*> validationLayers = {
-	"VK_LAYER_KHRONOS_validation", 
+	"VK_LAYER_KHRONOS_validation",
+	"VK_LAYER_LUNARG_monitor"
 };
 
 const std::vector<const char*> deviceExtensions = {
@@ -90,13 +91,17 @@ public:
 	void ReturnMemoryToSharedBuffer( IndexBufferBinding const& iBinding );
 
 	VertexBuffer* CreateDynamicVertexBuffer( uint64_t size );
+	/// buggy! do not use
 	void CopyDataToVertexBufferThroughStagingBuffer( void* buffer, uint64_t size, VertexBuffer* vertexBuffer, uint64_t dstOffset );
+	/// buggy! do not use
 	void CopyDataToUniformBufferThroughStagingBuffer( void* buffer, uint64_t size, UniformBuffer* uniformBuffer, uint64_t dstOffset );
 
 	void DeferredDestroyBuffer( UniformBuffer* buffer, bool isTransfer );
 	void DeferredDestroyBuffer( VertexBuffer* buffer, bool isTransfer );
 	void DeferredDestroyBuffer( IndexBuffer* buffer, bool isTransfer );
 	void DeferredDestroyBuffer( VkBuffer buffer, VkDeviceMemory deviceMemory, bool isTransfer );
+
+	void LetDeviceWaitIdle();
 protected:
 	void CreateInstance();
 

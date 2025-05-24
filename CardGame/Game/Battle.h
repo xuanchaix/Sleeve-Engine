@@ -2,6 +2,7 @@
 #include "Game/Frameworks/GameCommon.h"
 #include <deque>
 class Card;
+class Deck;
 struct EnemyInfo;
 
 enum class BattleState {
@@ -46,4 +47,6 @@ public:
 	std::vector<Card*> m_myCardsInDeck;
 	std::vector<Card*> m_enemyCardsInWaitingList;
 	std::vector<Card*> m_myCardsInWaitingList;
+	Deck* m_myDeck = nullptr;
+	Deck* m_enemyDeck = nullptr;
 };

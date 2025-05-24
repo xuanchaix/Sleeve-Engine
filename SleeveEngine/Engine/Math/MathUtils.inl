@@ -101,6 +101,30 @@ int RoundToInt( float value )
 }
 
 template<FloatingPointType T>
+T MoveTowards( T curPos, T targetPos, T maxMovement )
+{
+	if (curPos < targetPos) {
+		if (curPos + maxMovement < targetPos) {
+			return curPos + maxMovement;
+		}
+		else {
+			return targetPos;
+		}
+	}
+	else if (curPos > targetPos) {
+		if (curPos - maxMovement > targetPos) {
+			return curPos - maxMovement;
+		}
+		else {
+			return targetPos;
+		}
+	}
+	else {
+		return curPos;
+	}
+}
+
+template<FloatingPointType T>
 T ConvertDegreesToRadians( T degrees )
 {
 	return degrees / static_cast<T>(180.f) * static_cast<T>(PI);

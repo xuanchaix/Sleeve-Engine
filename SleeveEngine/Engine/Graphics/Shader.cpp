@@ -55,10 +55,10 @@ void Shader::UpdateDescriptorSets( UniformBufferBinding const& uniformBufferBind
 	descriptorWrites[2].descriptorCount = 1;
 	descriptorWrites[2].pImageInfo = &imageInfo;
 
-	// bind the set
-	vkCmdBindDescriptorSets( g_theRenderer->m_commandBuffers[g_theRenderer->m_currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &set, 0, nullptr );
 	// update the set
 	vkUpdateDescriptorSets( m_device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr );
+	// bind the set
+	vkCmdBindDescriptorSets( g_theRenderer->m_commandBuffers[g_theRenderer->m_currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0, 1, &set, 0, nullptr );
 }
 
 Shader::~Shader()

@@ -50,9 +50,6 @@ void App::Run()
 		}
 		//printf( "FPS: %.3f\n", 1000.f / frameTime );
 
-		if (g_theInput->WasKeyJustPressed( ENGINE_KEY_ESCAPE )) {
-			m_shouldQuit = true;
-		}
 	}
 }
 
@@ -80,6 +77,10 @@ void App::RunFrame()
 {
 	g_theGame->Update( (float)Clock::GetSystemClock()->GetDeltaSeconds() );
 	g_theGame->Render();
+
+	if (g_theInput->WasKeyJustReleased( ENGINE_KEY_ESCAPE )) {
+		m_shouldQuit = true;
+	}
 }
 
 void App::EndFrame()

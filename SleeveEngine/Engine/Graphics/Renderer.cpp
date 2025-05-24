@@ -207,7 +207,7 @@ void Renderer::EndFrame()
 	transferQueueSubmitInfo.pSignalSemaphores = &m_transferCompleteSemaphores[m_currentFrame];
 
 	vkQueueSubmit( m_transferQueue, 1, &transferQueueSubmitInfo, m_transferFences[m_currentFrame]);
-	
+
 	VkSubmitInfo graphicsQueueSubmitInfo{};
 	graphicsQueueSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -299,6 +299,11 @@ void Renderer::DeferredDestroyBuffer( IndexBuffer* buffer, bool isTransfer )
 void Renderer::DeferredDestroyBuffer( VkBuffer buffer, VkDeviceMemory deviceMemory, bool isTransfer )
 {
 	m_pendingDestroyBuffers.push_back( BufferPendingToDestroy{ buffer, deviceMemory, isTransfer } );
+}
+
+void Renderer::LetDeviceWaitIdle()
+{
+	vkDeviceWaitIdle( m_device );
 }
 
 void Renderer::CreateInstance()
@@ -1290,8 +1295,8 @@ VertexBuffer* Renderer::CreateDynamicVertexBuffer( uint64_t size )
 
 	VertexBuffer* vertexBuffer = new VertexBuffer( m_device, size );
 	vertexBuffer->m_stride = 0;
-	CreateBuffer( bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer->m_buffer, vertexBuffer->m_deviceMemory );
-	//vkMapMemory( m_device, vertexBuffer->m_deviceMemory, 0, bufferSize, 0, &vertexBuffer->m_mappedData );
+	CreateBuffer( bufferSize,  VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, vertexBuffer->m_buffer, vertexBuffer->m_deviceMemory );
+	vkMapMemory( m_device, vertexBuffer->m_deviceMemory, 0, bufferSize, 0, &vertexBuffer->m_mappedData );
 
 	return vertexBuffer;
 }
@@ -1428,27 +1433,7 @@ void Renderer::CreateBuffer( VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
 
 void Renderer::CopyBuffer( VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkDeviceSize srcOffset, VkDeviceSize dstOffset )
 {
-	//VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
 	m_copyCommands.push_back( BufferCopyCommand{ srcBuffer, dstBuffer, srcOffset, dstOffset, size } );
-
-// 	VkBufferCopy copyRegion{};
-// 	copyRegion.dstOffset = dstOffset;
-// 	copyRegion.srcOffset = srcOffset;
-// 	copyRegion.size = size;
-// 	vkCmdCopyBuffer(
-// 		m_transferCommandBuffer,
-// 		srcBuffer,
-// 		dstBuffer,
-// 		1,
-// 		&copyRegion
-// 	);
-// 	VkBufferCopy copyRegion{};
-// 	copyRegion.size = size;
-// 	copyRegion.dstOffset = dstOffset;
-// 	copyRegion.srcOffset = srcOffset;
-// 	vkCmdCopyBuffer( commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion );
-
-	//EndSingleTimeCommands( commandBuffer );
 }
 
 void Renderer::TransitionImageLayout( VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout )

@@ -83,6 +83,9 @@ void InputSystem::KeyCallback( GLFWwindow* window, int key, int scanCode, int ac
 		g_theInput->m_keyStates[key].m_isDownThisFrame = true;
 	}
 	else if (action == GLFW_RELEASE) {
+// 		if (g_theInput->m_keyStates[key].m_isDownThisFrame) {
+// 			g_theInput->m_keyStates[key].m_wasDownLastFrame = true;
+// 		}
 		g_theInput->m_keyStates[key].m_isDownThisFrame = false;
 	}
 }
@@ -93,6 +96,9 @@ void InputSystem::MouseButtonCallback( GLFWwindow* window, int button, int actio
 		g_theInput->m_keyStates[button + MOUSE_BUTTON_OFFSET].m_isDownThisFrame = true;
 	}
 	else if (action == GLFW_RELEASE) {
+// 		if (g_theInput->m_keyStates[button + MOUSE_BUTTON_OFFSET].m_isDownThisFrame) {
+// 			g_theInput->m_keyStates[button + MOUSE_BUTTON_OFFSET].m_wasDownLastFrame = true;
+// 		}
 		g_theInput->m_keyStates[button + MOUSE_BUTTON_OFFSET].m_isDownThisFrame = false;
 	}
 }

@@ -1,12 +1,9 @@
 #include "Game/Cards/Card.h"
 #include "Engine/Graphics/GraphicsFwd.h"
-constexpr uint32_t PerFrameTextVertexCount = 600;
-constexpr uint32_t PerFrameTextDataSize = PerFrameTextVertexCount * sizeof( VertexPCU3D );
-
 
 
 Card::Card( CardDefinition const& def, Vec3 const& position /*= Vec3()*/, Euler const& orientation /*= Euler()*/ )
-	:Entity3D(position, orientation, false), m_def(def)
+	:Entity3D(position, orientation), m_def(def)
 {
 }
 
@@ -58,6 +55,19 @@ void Card::Update( float deltaSeconds )
 		m_hoveringTimer = 0.f;
 	}
 
+	// update position
+	if (m_inBattleLine) {
+		if (m_isFriendly) {
+			float curX = m_position.x;
+			float targetX = BattleLineLeftX + m_targetPosInBattleLine * CardsSpacing;
+			float dist = abs( curX - targetX ) < 1.f ? 1.f : abs( curX - targetX );
+			m_position = Vec3( MoveTowards( curX, targetX, 10.f * deltaSeconds * dist ), -BattleLineY, CardsInBattleLineHeight );
+		}
+		else {
+			m_position = Vec3( BattleLineLeftX + m_targetPosInBattleLine * CardsSpacing, BattleLineY, CardsInBattleLineHeight );
+		}
+	}
+
 	CalculateModelMatrix( m_modelMatrix );
 
 	// update the text(health, damage, cool down)
@@ -90,9 +100,19 @@ void Card::Update( float deltaSeconds )
 	m_textVertexBufferBinding.m_vertexBufferVertexCount = (uint32_t)m_textVerts.size();
 	uint32_t frameIndex = g_theRenderer->GetCurFrameNumber();
 	uint32_t offset = frameIndex * PerFrameTextDataSize;
-	g_theRenderer->CopyDataToVertexBufferThroughStagingBuffer( m_textVerts.data(), m_textVertexBufferBinding.m_vertexBufferVertexCount * sizeof( VertexPCU3D ), m_textVertexBufferBinding.m_vertexBuffer, offset );
-	//memcpy((char*)m_textVertexBufferBinding.m_vertexBuffer->m_mappedData + offset, m_textVerts.data(), m_textVertexBufferBinding.m_vertexBufferVertexCount * sizeof(VertexPCU3D));
+	//g_theRenderer->CopyDataToVertexBufferThroughStagingBuffer( m_textVerts.data(), m_textVertexBufferBinding.m_vertexBufferVertexCount * sizeof( VertexPCU3D ), m_textVertexBufferBinding.m_vertexBuffer, offset );
+	memcpy((char*)m_textVertexBufferBinding.m_vertexBuffer->m_mappedData + offset, m_textVerts.data(), m_textVertexBufferBinding.m_vertexBufferVertexCount * sizeof(VertexPCU3D));
 	m_textVertexBufferBinding.m_vertexBufferOffset = offset;
+	   
+	if (!m_notShowCard) {
+		// copy the ubo data to the graphics card
+		g_theRenderer->UpdateSharedModelUniformBuffer( m_uniformBufferBinding, (void*)&m_modelMatrix, sizeof( m_modelMatrix ) );
+	}
+
+	if (m_isHovering || m_showDetail) {
+		// copy the ubo data to the graphics card
+		g_theRenderer->UpdateSharedModelUniformBuffer( m_UIBinding, (void*)&m_UIMatrix, sizeof( m_UIMatrix ) );
+	}
 }
 
 void Card::Render() const
@@ -103,8 +123,6 @@ void Card::Render() const
 		// -------------------------------Draw Card-----------------------------------
 		// acquire and set the descriptor set for this specific entity
 		g_theRenderer->BeginDrawCommands( m_uniformBufferBinding, m_textureBinding );
-		// copy the ubo data to the graphics card
-		g_theRenderer->UpdateSharedModelUniformBuffer( m_uniformBufferBinding, (void*)&m_modelMatrix, sizeof( m_modelMatrix ) );
 		if (m_useIndexBuffer) {
 			// draw the entity
 			g_theRenderer->DrawIndexed( m_vertexBufferBinding, m_indexBufferBinding );
@@ -124,8 +142,6 @@ void Card::Render() const
 	if (m_isHovering || m_showDetail) {
 		// acquire and set the descriptor set for this specific entity
 		g_theRenderer->BeginDrawCommands( m_UIBinding, m_textureBinding );
-		// copy the ubo data to the graphics card
-		g_theRenderer->UpdateSharedModelUniformBuffer( m_UIBinding, (void*)&m_UIMatrix, sizeof( m_UIMatrix ) );
 		if (m_useIndexBuffer) {
 			// draw the entity
 			g_theRenderer->DrawIndexed( m_vertexBufferBinding, m_indexBufferBinding );

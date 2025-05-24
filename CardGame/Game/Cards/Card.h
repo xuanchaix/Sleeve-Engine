@@ -3,9 +3,6 @@
 #include "Game/Frameworks/GameCommon.h"
 #include "Engine/Core/XmlUtils.h"
 
-constexpr float CardWidth = 66.f;
-constexpr float CardHeight = 90.f;
-
 enum class CardRarity {
 	Beginning, Common, Rare, Legendary,
 };
@@ -53,11 +50,13 @@ public:
 	int m_curDamage = 1;
 	int m_curHealth = 5;
 	int m_curCoolDown = 2;
+	uint32_t m_targetPosInBattleLine = 0;
 	float m_hoveringTimer = 0.f;
 	bool m_inBattleLine = false;
 	bool m_isHovering = false;
 	bool m_showDetail = false;
 	bool m_notShowCard = false;
+	bool m_isFriendly = false;
 	AABB2 m_cardBounds2D;
 	std::vector<VertexPCU3D> m_textVerts;
 	VertexBufferBinding m_textVertexBufferBinding;

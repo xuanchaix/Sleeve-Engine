@@ -12,6 +12,7 @@ public:
 	};
 
 public:
+	void* m_mappedData = nullptr;
 protected:
 	friend class Renderer;
 	VertexBuffer( VkDevice device, uint64_t size );

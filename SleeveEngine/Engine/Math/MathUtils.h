@@ -45,6 +45,9 @@ T RangeMapClamped( T inValue, T inStart, T inEnd, T outStart, T outEnd );
 inline int RoundDownToInt( float value );
 /// Round the float to a nearest integer
 inline int RoundToInt( float value );
+// Has max movement units to move, try best to reach the goal position from current position
+template<FloatingPointType T>
+inline T MoveTowards( T curPos, T targetPos, T maxMovement );
 
 //----------------------------
 // Angle utilities

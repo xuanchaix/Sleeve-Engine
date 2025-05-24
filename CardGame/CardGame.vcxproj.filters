@@ -16,6 +16,9 @@
     <Filter Include="Definitions">
       <UniqueIdentifier>{61324bb8-a99c-4034-b157-15e9dae29e40}</UniqueIdentifier>
     </Filter>
+    <Filter Include="UI">
+      <UniqueIdentifier>{06a35f38-9dc2-49ba-ba9a-0bfa4dc717d4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game\Frameworks\GameCommon.cpp" />
@@ -31,6 +34,9 @@
     </ClCompile>
     <ClCompile Include="Game\Battle.cpp">
       <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\Deck.cpp">
+      <Filter>UI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -49,6 +55,9 @@
     </ClInclude>
     <ClInclude Include="Game\EnemyInfo.h">
       <Filter>Enemy</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\Deck.h">
+      <Filter>UI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -41,7 +41,7 @@ protected:
 
 class Entity3D : public EntityBase {
 public:
-	Entity3D( Vec3 const& position = Vec3(), Euler const& orientation = Euler(), bool isTest = false );
+	Entity3D( Vec3 const& position = Vec3(), Euler const& orientation = Euler() );
 	~Entity3D();
 	/// Begin play will be called right after an entity is created
 	virtual void BeginPlay() override;

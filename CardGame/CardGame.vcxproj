@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Game\Deck.cpp" />
     <ClCompile Include="Game\Battle.cpp" />
     <ClCompile Include="Game\Cards\Card.cpp" />
     <ClCompile Include="Game\Frameworks\App.cpp" />
@@ -27,6 +28,7 @@
     <ClCompile Include="Game\Frameworks\main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Game\Deck.h" />
     <ClInclude Include="Game\Battle.h" />
     <ClInclude Include="Game\Cards\Card.h" />
     <ClInclude Include="Game\EnemyInfo.h" />
